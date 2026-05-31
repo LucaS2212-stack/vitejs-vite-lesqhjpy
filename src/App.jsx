@@ -173,6 +173,97 @@ function AuthScreen({C}){
   );
 }
 
+// ─── PLANNING SETUP ───────────────────────────────────────────────────────────
+function PlanningSetup({C,inp,lastW,plan,todayStr,fmtShort,setPlanning,setPlanningView}){
+  const[pName,setPName]=useState("");
+  const[pType,setPType]=useState("cut");
+  const[pStart,setPStart]=useState(todayStr());
+  const[pEnd,setPEnd]=useState(()=>{const d=new Date();d.setDate(d.getDate()+56);return d.toISOString().split("T")[0];});
+  const[pWStart,setPWStart]=useState(lastW||80);
+  const[pWEnd,setPWEnd]=useState((lastW||80)-4);
+
+  function createPlan(){
+    const start=new Date(pStart+"T12:00:00");
+    const end=new Date(pEnd+"T12:00:00");
+    const numWeeks=Math.max(1,Math.ceil((end-start)/(7*24*3600*1000)));
+    const wTarget=parseFloat(pWStart),wFinal=parseFloat(pWEnd);
+    const calStart=plan.onCal;
+    const calFinal=Math.round(calStart*(pType==="cut"?0.85:pType==="bulk"?1.1:1));
+    const offCalFinal=Math.round(plan.offCal*(pType==="cut"?0.85:pType==="bulk"?1.1:1));
+    const weeks=Array.from({length:numWeeks},(_,i)=>{
+      const t=numWeeks>1?i/(numWeeks-1):0;
+      const wDate=new Date(start);wDate.setDate(start.getDate()+i*7);
+      return{
+        week:i+1,date:wDate.toISOString().split("T")[0],
+        onCal:Math.round(calStart+(calFinal-calStart)*t),
+        offCal:Math.round(plan.offCal+(offCalFinal-plan.offCal)*t),
+        onP:plan.onP,offP:plan.offP,
+        onC:Math.round(plan.onC+(plan.onC*(pType==="cut"?0.7:pType==="bulk"?1.15:1)-plan.onC)*t),
+        offC:Math.round(plan.offC+(plan.offC*(pType==="cut"?0.7:pType==="bulk"?1.15:1)-plan.offC)*t),
+        onF:plan.onF,offF:plan.offF,
+        weightTarget:+(wTarget+(wFinal-wTarget)*t).toFixed(1),
+        note:"",
+      };
+    });
+    setPlanning({name:pName||`${pType.charAt(0).toUpperCase()+pType.slice(1)} ${new Date().getFullYear()}`,type:pType,startDate:pStart,weeks});
+    setPlanningView("edit");
+  }
+
+  const numW=Math.max(1,Math.ceil((new Date(pEnd+"T12:00:00")-new Date(pStart+"T12:00:00"))/(7*24*3600*1000)));
+
+  return(
+    <>
+      <div style={{fontSize:16,fontWeight:700,color:C.text,marginBottom:4}}>Nuovo piano</div>
+      <div style={{fontSize:12,color:C.sub,marginBottom:18}}>Imposta le basi — potrai modificare ogni settimana dopo</div>
+      <Card C={C}>
+        <div style={{fontSize:12,color:C.sub,marginBottom:14,fontWeight:500}}>Tipo di piano</div>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(120px,1fr))",gap:8}}>
+          {[["cut","Cut","Deficit calorico",C.orange],["bulk","Bulk","Surplus calorico",C.green],["recomp","Recomp","Mantenimento+",C.blue],["maint","Mantenimento","Calorie stabili",C.teal]].map(([v,l,s,color])=>(
+            <button key={v} onClick={()=>setPType(v)}
+              style={{padding:"14px 10px",background:pType===v?`${color}14`:C.bg2,border:`1.5px solid ${pType===v?color:C.border}`,borderRadius:14,cursor:"pointer",textAlign:"center",fontFamily:C.f,transition:"all 0.2s"}}>
+              <div style={{fontSize:13,fontWeight:700,color:pType===v?color:C.text,marginBottom:3}}>{l}</div>
+              <div style={{fontSize:10,color:C.muted}}>{s}</div>
+            </button>
+          ))}
+        </div>
+      </Card>
+      <Card C={C}>
+        <div style={{display:"flex",flexDirection:"column",gap:12}}>
+          <div>
+            <div style={{fontSize:12,color:C.sub,marginBottom:6,fontWeight:500}}>Nome piano (opzionale)</div>
+            <input value={pName} onChange={e=>setPName(e.target.value)} placeholder="Es: Cut estate 2026" style={inp}/>
+          </div>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(140px,1fr))",gap:10}}>
+            <div>
+              <div style={{fontSize:12,color:C.sub,marginBottom:6,fontWeight:500}}>Data inizio</div>
+              <input type="date" value={pStart} onChange={e=>setPStart(e.target.value)} style={inp}/>
+            </div>
+            <div>
+              <div style={{fontSize:12,color:C.sub,marginBottom:6,fontWeight:500}}>Data fine</div>
+              <input type="date" value={pEnd} onChange={e=>setPEnd(e.target.value)} style={inp}/>
+            </div>
+          </div>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(140px,1fr))",gap:10}}>
+            <div>
+              <div style={{fontSize:12,color:C.sub,marginBottom:6,fontWeight:500}}>Peso iniziale (kg)</div>
+              <input type="number" step="0.1" value={pWStart} onChange={e=>setPWStart(e.target.value)} style={inp}/>
+            </div>
+            <div>
+              <div style={{fontSize:12,color:C.sub,marginBottom:6,fontWeight:500}}>Peso target (kg)</div>
+              <input type="number" step="0.1" value={pWEnd} onChange={e=>setPWEnd(e.target.value)} style={inp}/>
+            </div>
+          </div>
+        </div>
+      </Card>
+      <div style={{fontSize:11,color:C.muted,textAlign:"center"}}>{numW} settimane · {numW*7} giorni</div>
+      <button onClick={createPlan}
+        style={{width:"100%",padding:14,background:`linear-gradient(135deg,${C.blue},${C.indigo})`,border:"none",borderRadius:14,color:"#fff",fontSize:14,fontWeight:600,cursor:"pointer",fontFamily:C.f,boxShadow:`0 4px 16px ${C.blue}30`}}>
+        Genera piano →
+      </button>
+    </>
+  );
+}
+
 // ─── MAIN APP ─────────────────────────────────────────────────────────────────
 export default function App(){
   const[isDark,setIsDark]=useState(()=>localStorage.getItem("atk_theme")!=="light");
@@ -199,6 +290,8 @@ export default function App(){
   const[calRange,setCalRange]=useState(30);
   const[weekOffset,setWeekOffset]=useState(0);
   const[weekNotes,setWeekNotes]=useState({});
+  const[planning,setPlanning]=useState(null);
+  const[planningView,setPlanningView]=useState("setup");
   const[wInput,setWInput]=useState("");
   const[wDate,setWDate]=useState(todayStr());
   const[wNote,setWNote]=useState("");
@@ -211,10 +304,11 @@ export default function App(){
     async function fetchAll(){
       setLoading(true);
       try{
-        const[dr,wr,pr]=await Promise.all([
+        const[dr,wr,pr,plr]=await Promise.all([
           sb.from("athlete_days").select("*").eq("user_id",user.id),
           sb.from("athlete_weight").select("*").eq("user_id",user.id).order("date"),
           sb.from("athlete_plan_history").select("*").eq("user_id",user.id).order("date"),
+          sb.from("athlete_planning").select("*").eq("user_id",user.id).order("created_at",{ascending:false}).limit(1),
         ]);
         if(dr.data){const map={};dr.data.forEach(r=>{map[r.date]={type:r.type,calories:r.calories,protein:r.protein,carbs:r.carbs,fat:r.fat,steps:r.steps,note:r.note,isEstimate:r.is_estimate};});setDays(map);}
         if(wr.data)setWeightLog(wr.data.map(r=>({date:r.date,weight:r.weight,note:r.note})));
@@ -224,6 +318,11 @@ export default function App(){
           const init={date:"2020-01-01",...DEFAULT_PLAN};
           setPlanHistory([init]);
           await sb.from("athlete_plan_history").insert({date:init.date,on_cal:init.onCal,on_p:init.onP,on_c:init.onC,on_f:init.onF,off_cal:init.offCal,off_p:init.offP,off_c:init.offC,off_f:init.offF,user_id:user.id});
+        }
+        if(plr.data&&plr.data.length){
+          const p=plr.data[0];
+          setPlanning({id:p.id,name:p.name,type:p.type,startDate:p.start_date,weeks:p.weeks||[]});
+          setPlanningView("view");
         }
       }catch(e){console.error(e);}
       setLoading(false);
@@ -372,6 +471,7 @@ export default function App(){
     {id:"oggi",label:"Oggi",icon:(a)=><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={a?C.blue:C.muted} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15.5 14"/></svg>},
     {id:"peso",label:"Peso",icon:(a)=><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={a?C.blue:C.muted} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>},
     {id:"piano",label:"Piano",icon:(a)=><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={a?C.blue:C.muted} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>},
+    {id:"planning",label:"Planning",icon:(a)=><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={a?C.blue:C.muted} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>},
   ];
 
   if(authLoading)return(
@@ -879,9 +979,175 @@ export default function App(){
               )}
             </>)}
 
-          </div>
-        </div>
-      </div>
+            {/* ── PLANNING ── */}
+            {tab==="planning"&&(<>
+              {planningView==="setup"&&(
+                <PlanningSetup C={C} inp={inp} lastW={lastW} plan={plan} todayStr={todayStr} fmtShort={fmtShort} setPlanning={setPlanning} setPlanningView={setPlanningView}/>
+              )}
+
+              {(planningView==="edit"||planningView==="view")&&planning&&(()=>{
+                const typeColors={cut:C.orange,bulk:C.green,recomp:C.blue,maint:C.teal};
+                const typeColor=typeColors[planning.type]||C.blue;
+                const typeLabel={cut:"Cut",bulk:"Bulk",recomp:"Recomp",maint:"Mantenimento"}[planning.type]||planning.type;
+                const totalWeeks=planning.weeks.length;
+                const today=todayStr();
+                const currentWeekIdx=planning.weeks.findIndex((w,i)=>{
+                  const next=planning.weeks[i+1];
+                  return w.date<=today&&(!next||next.date>today);
+                });
+                const progress=currentWeekIdx>=0?Math.round((currentWeekIdx+1)/totalWeeks*100):0;
+
+                const chartData=planning.weeks.map(w=>({
+                  week:`S${w.week}`,
+                  "Cal ON":w.onCal,
+                  "Cal OFF":w.offCal,
+                  "Peso":w.weightTarget,
+                }));
+
+                async function savePlanning(){
+                  setSyncing(true);
+                  if(planning.id){
+                    await sb.from("athlete_planning").update({name:planning.name,type:planning.type,start_date:planning.startDate,weeks:planning.weeks}).eq("id",planning.id).eq("user_id",user.id);
+                  }else{
+                    const{data}=await sb.from("athlete_planning").insert({name:planning.name,type:planning.type,start_date:planning.startDate,weeks:planning.weeks,user_id:user.id}).select().single();
+                    if(data)setPlanning(p=>({...p,id:data.id}));
+                  }
+                  setSyncing(false);
+                  setPlanningView("view");
+                  showToast("Piano salvato");
+                }
+
+                function updateWeek(i,field,val){
+                  setPlanning(p=>({...p,weeks:p.weeks.map((w,wi)=>wi===i?{...w,[field]:val}:w)}));
+                }
+
+                return(
+                  <>
+                    {/* Header piano */}
+                    <div style={{background:C.bg1,border:`1.5px solid ${typeColor}30`,borderRadius:20,padding:18,borderLeft:`3px solid ${typeColor}`}}>
+                      <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:12}}>
+                        <div>
+                          <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:6}}>
+                            <span style={{fontSize:11,fontWeight:600,background:`${typeColor}14`,color:typeColor,borderRadius:6,padding:"3px 9px"}}>{typeLabel}</span>
+                            <span style={{fontSize:11,color:C.muted}}>{totalWeeks} settimane</span>
+                          </div>
+                          <div style={{fontSize:16,fontWeight:700,color:C.text}}>{planning.name}</div>
+                          <div style={{fontSize:11,color:C.sub,marginTop:3}}>{fmtShort(planning.startDate)} → {fmtShort(planning.weeks[planning.weeks.length-1]?.date)}</div>
+                        </div>
+                        {currentWeekIdx>=0&&(
+                          <div style={{textAlign:"right"}}>
+                            <div style={{fontSize:22,fontWeight:700,color:typeColor}}>{currentWeekIdx+1}<span style={{fontSize:13,color:C.sub}}>/{totalWeeks}</span></div>
+                            <div style={{fontSize:10,color:C.muted}}>settimana attuale</div>
+                          </div>
+                        )}
+                      </div>
+                      {currentWeekIdx>=0&&(
+                        <div style={{height:4,background:C.bg3,borderRadius:99,overflow:"hidden"}}>
+                          <div style={{height:4,width:`${progress}%`,background:typeColor,borderRadius:99,transition:"width 0.5s"}}/>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* KPI */}
+                    <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(120px,1fr))",gap:10}}>
+                      <KPI C={C} label="Peso iniziale" value={planning.weeks[0]?.weightTarget} unit="kg" color={C.teal}/>
+                      <KPI C={C} label="Peso target" value={planning.weeks[planning.weeks.length-1]?.weightTarget} unit="kg" color={typeColor}/>
+                      <KPI C={C} label="Cal iniziali ON" value={planning.weeks[0]?.onCal} unit="kcal" color={C.blue}/>
+                      <KPI C={C} label="Cal finali ON" value={planning.weeks[planning.weeks.length-1]?.onCal} unit="kcal" color={typeColor}/>
+                    </div>
+
+                    {/* Grafico */}
+                    <Card C={C}>
+                      <div style={{fontSize:13,fontWeight:600,color:C.text,marginBottom:14}}>Progressione calorie + peso</div>
+                      <ResponsiveContainer width="100%" height={180}>
+                        <AreaChart data={chartData}>
+                          <defs>
+                            <linearGradient id="pgon" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor={C.blue} stopOpacity={0.18}/><stop offset="95%" stopColor={C.blue} stopOpacity={0}/></linearGradient>
+                            <linearGradient id="pgoff" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor={C.teal} stopOpacity={0.12}/><stop offset="95%" stopColor={C.teal} stopOpacity={0}/></linearGradient>
+                          </defs>
+                          <CartesianGrid strokeDasharray="3 3" stroke={isDark?"rgba(255,255,255,0.04)":"rgba(0,0,0,0.04)"} vertical={false}/>
+                          <XAxis dataKey="week" tick={{fill:C.muted,fontSize:9}} axisLine={false} tickLine={false}/>
+                          <YAxis yAxisId="cal" tick={{fill:C.muted,fontSize:9}} axisLine={false} tickLine={false} domain={["auto","auto"]} width={36}/>
+                          <YAxis yAxisId="w" orientation="right" tick={{fill:C.muted,fontSize:9}} axisLine={false} tickLine={false} domain={["auto","auto"]} width={36}/>
+                          <Tooltip content={<CTip C={C}/>}/>
+                          <Area yAxisId="cal" type="monotone" dataKey="Cal ON" stroke={C.blue} strokeWidth={2} fill="url(#pgon)" dot={false}/>
+                          <Area yAxisId="cal" type="monotone" dataKey="Cal OFF" stroke={C.teal} strokeWidth={1.5} strokeDasharray="4 3" fill="url(#pgoff)" dot={false}/>
+                        </AreaChart>
+                      </ResponsiveContainer>
+                      <div style={{display:"flex",gap:12,marginTop:8}}>
+                        <div style={{display:"flex",gap:4,alignItems:"center"}}><div style={{width:12,height:2,background:C.blue,borderRadius:99}}/><span style={{fontSize:10,color:C.muted}}>Cal ON</span></div>
+                        <div style={{display:"flex",gap:4,alignItems:"center"}}><div style={{width:12,height:2,background:C.teal,borderRadius:99,opacity:0.7}}/><span style={{fontSize:10,color:C.muted}}>Cal OFF</span></div>
+                      </div>
+                    </Card>
+
+                    {/* Tabella settimane */}
+                    <Card C={C}>
+                      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
+                        <span style={{fontSize:13,fontWeight:600,color:C.text}}>Settimane</span>
+                        {planningView==="view"&&<button onClick={()=>setPlanningView("edit")} style={{fontSize:12,color:C.blue,background:"none",border:`1px solid ${C.blue}30`,borderRadius:8,padding:"4px 10px",cursor:"pointer",fontFamily:C.f}}>Modifica</button>}
+                        {planningView==="edit"&&<button onClick={savePlanning} style={{fontSize:12,color:"#fff",background:C.blue,border:"none",borderRadius:8,padding:"5px 12px",cursor:"pointer",fontFamily:C.f,fontWeight:600}}>Salva</button>}
+                      </div>
+                      {planning.weeks.map((w,i)=>{
+                        const isCurrent=i===currentWeekIdx;
+                        const isPast=currentWeekIdx>=0&&i<currentWeekIdx;
+                        return(
+                          <div key={i} style={{padding:"14px 0",borderBottom:i<planning.weeks.length-1?`1px solid ${C.border}`:"none",opacity:isPast?0.6:1}}>
+                            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
+                              <div style={{display:"flex",alignItems:"center",gap:8}}>
+                                <div style={{width:24,height:24,borderRadius:99,background:isCurrent?typeColor:isPast?C.bg3:C.bg2,display:"flex",alignItems:"center",justifyContent:"center"}}>
+                                  <span style={{fontSize:10,fontWeight:600,color:isCurrent?"#fff":C.sub}}>{w.week}</span>
+                                </div>
+                                <span style={{fontSize:12,color:isCurrent?typeColor:C.sub,fontWeight:isCurrent?600:400}}>{fmtShort(w.date)}{isCurrent?" · ora":""}</span>
+                              </div>
+                              <span style={{fontSize:13,fontWeight:600,color:isCurrent?typeColor:C.text}}>{w.weightTarget} kg</span>
+                            </div>
+                            {planningView==="edit"?(
+                              <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(100px,1fr))",gap:8,marginBottom:8}}>
+                                {[["Cal ON","onCal","kcal"],["Cal OFF","offCal","kcal"],["P ON","onP","g"],["C ON","onC","g"],["G ON","onF","g"],["Peso target","weightTarget","kg"]].map(([l,k,u])=>(
+                                  <div key={k}>
+                                    <div style={{fontSize:10,color:C.muted,marginBottom:3}}>{l}</div>
+                                    <div style={{position:"relative"}}>
+                                      <input type="number" defaultValue={w[k]} onBlur={e=>updateWeek(i,k,e.target.value?+e.target.value:w[k])}
+                                        style={{...inp,padding:"7px 28px 7px 10px",fontSize:12}}/>
+                                      <span style={{position:"absolute",right:7,top:"50%",transform:"translateY(-50%)",fontSize:10,color:C.muted,pointerEvents:"none"}}>{u}</span>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            ):(
+                              <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+                                <span style={{fontSize:11,background:`${C.blue}14`,color:C.blue,borderRadius:6,padding:"2px 8px"}}>ON {w.onCal} kcal</span>
+                                <span style={{fontSize:11,background:`${C.teal}14`,color:C.teal,borderRadius:6,padding:"2px 8px"}}>OFF {w.offCal} kcal</span>
+                                {w.onP&&<span style={{fontSize:11,color:C.green}}>P {w.onP}g</span>}
+                                {w.onC&&<span style={{fontSize:11,color:C.orange}}>C {w.onC}g</span>}
+                                {w.onF&&<span style={{fontSize:11,color:C.purple}}>G {w.onF}g</span>}
+                              </div>
+                            )}
+                            {planningView==="edit"?(
+                              <input defaultValue={w.note} onBlur={e=>updateWeek(i,"note",e.target.value)}
+                                placeholder="Note settimana…" style={{...inp,fontSize:11,padding:"6px 10px",marginTop:6}}/>
+                            ):(w.note&&<div style={{fontSize:11,color:C.muted,marginTop:6,fontStyle:"italic"}}>{w.note}</div>)}
+                          </div>
+                        );
+                      })}
+                    </Card>
+
+                    <div style={{display:"flex",gap:10}}>
+                      <button onClick={()=>{setPlanning(null);setPlanningView("setup");}}
+                        style={{flex:1,padding:12,background:C.bg2,border:`1px solid ${C.border}`,borderRadius:12,color:C.sub,fontSize:13,cursor:"pointer",fontFamily:C.f}}>
+                        Nuovo piano
+                      </button>
+                      {planningView==="edit"&&(
+                        <button onClick={savePlanning}
+                          style={{flex:2,padding:12,background:`linear-gradient(135deg,${C.blue},${C.indigo})`,border:"none",borderRadius:12,color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:C.f}}>
+                          Salva piano
+                        </button>
+                      )}
+                    </div>
+                  </>
+                );
+              })()}
+            </>)}
 
       {/* BOTTOM NAV mobile */}
       {(typeof window==="undefined"||window.innerWidth<768)&&(
