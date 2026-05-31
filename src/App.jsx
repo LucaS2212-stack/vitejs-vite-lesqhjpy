@@ -228,8 +228,10 @@ function MealPlan({C,inp,sb,user,mealPlanOn,setMealPlanOn,mealPlanOnId,setMealPl
       if(data.status===1&&data.product){
         const p=data.product;
         const n=p.nutriments||{};
-        // Priorità: kcal per 100g → kJ per 100g convertiti → 0
-        const cal=Math.round(
+        const prot=Math.round((n["proteins_100g"]||n["protein_100g"]||0)*10)/10;
+        const carb=Math.round((n["carbohydrates_100g"]||0)*10)/10;
+        const fat=Math.round((n["fat_100g"]||0)*10)/10;
+        let cal=Math.round(
           n["energy-kcal_100g"]||
           n["energy-kcal"]||
           (n["energy-kj_100g"]?Math.round(n["energy-kj_100g"]/4.184):0)||
@@ -237,9 +239,10 @@ function MealPlan({C,inp,sb,user,mealPlanOn,setMealPlanOn,mealPlanOnId,setMealPl
           (n["energy_100g"]&&(n["energy_unit"]||"").toLowerCase()==="kj"?Math.round(n["energy_100g"]/4.184):0)||
           0
         );
-        const prot=Math.round((n["proteins_100g"]||n["protein_100g"]||0)*10)/10;
-        const carb=Math.round((n["carbohydrates_100g"]||0)*10)/10;
-        const fat=Math.round((n["fat_100g"]||0)*10)/10;
+        // Se le calorie sono troppo basse rispetto ai macro, ricalcola dai macro
+        const calFromMacro=Math.round(prot*4+carb*4+fat*9);
+        if(calFromMacro>0&&cal>0&&cal<calFromMacro*0.5){cal=calFromMacro;}
+        if(cal===0&&calFromMacro>0){cal=calFromMacro;}
         const name=p.product_name_it||p.product_name||p.generic_name||"Prodotto sconosciuto";
         const food={id:`off_${barcode}`,name,brand:p.brands||"",source:"Barcode",cal,prot,carb,fat,per100:{cal,prot,carb,fat}};
         setSearchResults([food]);
