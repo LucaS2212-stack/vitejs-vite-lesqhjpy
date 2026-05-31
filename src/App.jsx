@@ -205,27 +205,21 @@ function MealPlan({C,inp,sb,user,mealPlanOn,setMealPlanOn,mealPlanOnId,setMealPl
         body:JSON.stringify({query:q})
       });
       const data=await res.json();
-      const foods=data?.foods?.food||[];
-      const arr=Array.isArray(foods)?foods:[foods];
-      const results=arr.slice(0,10).map(f=>{
-        const desc=f.food_description||"";
-        const cal=parseFloat(desc.match(/Calories:\s*([\d.]+)/)?.[1]||0);
-        const fat=parseFloat(desc.match(/Fat:\s*([\d.]+)/)?.[1]||0);
-        const carb=parseFloat(desc.match(/Carbs:\s*([\d.]+)/)?.[1]||0);
-        const prot=parseFloat(desc.match(/Protein:\s*([\d.]+)/)?.[1]||0);
-        return{
-          id:f.food_id,
-          name:f.food_name,
-          brand:f.brand_name||"",
-          type:f.food_type||"",
-          cal:Math.round(cal),
-          prot:Math.round(prot*10)/10,
-          carb:Math.round(carb*10)/10,
-          fat:Math.round(fat*10)/10,
-          per100:{cal:Math.round(cal),prot:Math.round(prot*10)/10,carb:Math.round(carb*10)/10,fat:Math.round(fat*10)/10},
-          desc,
-        };
-      });
+      const results=(data.foods||[]).map(f=>({
+        id:f.fdcId,
+        name:f.description,
+        brand:f.brandOwner||f.brandName||"",
+        cal:Math.round(f.foodNutrients?.find(n=>n.nutrientId===1008)?.value||0),
+        prot:Math.round((f.foodNutrients?.find(n=>n.nutrientId===1003)?.value||0)*10)/10,
+        carb:Math.round((f.foodNutrients?.find(n=>n.nutrientId===1005)?.value||0)*10)/10,
+        fat:Math.round((f.foodNutrients?.find(n=>n.nutrientId===1004)?.value||0)*10)/10,
+        per100:{
+          cal:Math.round(f.foodNutrients?.find(n=>n.nutrientId===1008)?.value||0),
+          prot:Math.round((f.foodNutrients?.find(n=>n.nutrientId===1003)?.value||0)*10)/10,
+          carb:Math.round((f.foodNutrients?.find(n=>n.nutrientId===1005)?.value||0)*10)/10,
+          fat:Math.round((f.foodNutrients?.find(n=>n.nutrientId===1004)?.value||0)*10)/10,
+        },
+      }));
       setSearchResults(results);
     }catch(e){console.error(e);setSearchResults([]);}
     setSearching(false);
@@ -410,16 +404,8 @@ function MealPlan({C,inp,sb,user,mealPlanOn,setMealPlanOn,mealPlanOnId,setMealPl
                   </div>
                 )}
                 {searchResults.length===0&&!searching&&search&&(
-                  <div style={{fontSize:12,color:C.muted,textAlign:"center",padding:12}}>Nessun risultato trovato</div>
+                  <div style={{fontSize:12,color:C.muted,textAlign:"center",padding:12}}>Nessun risultato — prova in inglese (es: chicken, rice, egg)</div>
                 )}
-                {/* FatSecret Attribution */}
-                <div style={{marginTop:8,textAlign:"center"}}>
-                  <a href="https://platform.fatsecret.com" target="_blank" rel="noopener noreferrer">
-                    <img alt="Nutrition information provided by fatsecret Platform API"
-                      src="https://platform.fatsecret.com/api/static/images/powered_by_fatsecret_horizontal_brand.svg"
-                      style={{height:16,opacity:0.6}}/>
-                  </a>
-                </div>
               </div>
             ):(
               <button onClick={()=>setAddingTo(mealIdx)}
