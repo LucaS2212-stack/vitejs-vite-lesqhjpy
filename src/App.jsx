@@ -174,123 +174,163 @@ function AuthScreen({C}){
 }
 
 // ─── MEAL PLAN ────────────────────────────────────────────────────────────────
-function MealPlan({C,inp,sb,user,mealPlanOn,setMealPlanOn,mealPlanOnId,setMealPlanOnId,mealPlanOff,setMealPlanOff,mealPlanOffId,setMealPlanOffId,showToast,todayType,today}){
+function MealPlan({C,inp,sb,user,mealPlanOn,setMealPlanOn,mealPlanOnId,setMealPlanOnId,mealPlanOff,setMealPlanOff,mealPlanOffId,setMealPlanOffId,showToast}){
   const[dayTab,setDayTab]=useState("on");
   const[search,setSearch]=useState("");
   const[searchResults,setSearchResults]=useState([]);
   const[searching,setSearching]=useState(false);
-  const[addingTo,setAddingTo]=useState(null); // {mealIdx}
-  const[editQty,setEditQty]=useState({}); // {mealIdx_foodIdx: qty}
+  const[addingTo,setAddingTo]=useState(null);
+  const[searchTab,setSearchTab]=useState("cerca");
+  const[myFoods,setMyFoods]=useState([]);
+  const[showAddFood,setShowAddFood]=useState(false);
+  const[newFood,setNewFood]=useState({name:"",brand:"",cal:"",prot:"",carb:"",fat:""});
+  const[savingFood,setSavingFood]=useState(false);
+  const[scannerActive,setScannerActive]=useState(false);
+  const[scannerMsg,setScannerMsg]=useState("");
+  const[renamingMeal,setRenamingMeal]=useState(null);
+  const[saving,setSaving]=useState(false);
 
   const meals=dayTab==="on"?(mealPlanOn||[]):(mealPlanOff||[]);
   const setMeals=dayTab==="on"?setMealPlanOn:setMealPlanOff;
   const planId=dayTab==="on"?mealPlanOnId:mealPlanOffId;
   const setPlanId=dayTab==="on"?setMealPlanOnId:setMealPlanOffId;
 
-  // Totali giornata
   const dayTotals=meals.reduce((acc,meal)=>{
-    meal.foods?.forEach(f=>{
-      acc.cal+=(f.cal||0);acc.prot+=(f.prot||0);acc.carb+=(f.carb||0);acc.fat+=(f.fat||0);
-    });
+    meal.foods?.forEach(f=>{acc.cal+=(f.cal||0);acc.prot+=(f.prot||0);acc.carb+=(f.carb||0);acc.fat+=(f.fat||0);});
     return acc;
   },{cal:0,prot:0,carb:0,fat:0});
+
+  // Load my foods
+  useState(()=>{
+    if(!user)return;
+    sb.from("athlete_foods").select("*").eq("user_id",user.id).order("name").then(({data})=>{
+      if(data)setMyFoods(data.map(f=>({id:`my_${f.id}`,dbId:f.id,name:f.name,brand:f.brand||"",cal:f.cal||0,prot:f.prot||0,carb:f.carb||0,fat:f.fat||0,per100:{cal:f.cal||0,prot:f.prot||0,carb:f.carb||0,fat:f.fat||0},source:"I miei"})));
+    });
+  },[user]);
 
   async function searchFood(q){
     if(!q.trim())return;
     setSearching(true);
     try{
-      const res=await fetch("/api/fatsecret",{
-        method:"POST",
-        headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({query:q})
-      });
+      const res=await fetch("/api/fatsecret",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({query:q})});
       const data=await res.json();
       setSearchResults(data.results||[]);
     }catch(e){console.error(e);setSearchResults([]);}
     setSearching(false);
   }
 
+  async function searchBarcode(barcode){
+    setScannerMsg("Ricerca in corso…");
+    try{
+      const res=await fetch(`https://world.openfoodfacts.org/api/v0/product/${barcode}.json`);
+      const data=await res.json();
+      if(data.status===1&&data.product){
+        const p=data.product;
+        const n=p.nutriments||{};
+        const cal=Math.round(n["energy-kcal_100g"]||(n["energy_100g"]||0)/4.184||0);
+        const prot=Math.round((n.proteins_100g||0)*10)/10;
+        const carb=Math.round((n.carbohydrates_100g||0)*10)/10;
+        const fat=Math.round((n.fat_100g||0)*10)/10;
+        const name=p.product_name_it||p.product_name||"Prodotto sconosciuto";
+        const food={id:`off_${barcode}`,name,brand:p.brands||"",source:"Barcode",cal,prot,carb,fat,per100:{cal,prot,carb,fat}};
+        setSearchResults([food]);
+        setScannerMsg(`Trovato: ${name}`);
+      }else{
+        setScannerMsg("Prodotto non trovato nel database");
+        setSearchResults([]);
+      }
+    }catch(e){setScannerMsg("Errore nella ricerca");}
+  }
+
+  async function startScanner(){
+    setScannerActive(true);
+    setScannerMsg("Avvio fotocamera…");
+    try{
+      const{Html5Qrcode}=await import("https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.esm.js");
+      const scanner=new Html5Qrcode("qr-reader");
+      await scanner.start(
+        {facingMode:"environment"},
+        {fps:10,qrbox:{width:250,height:150}},
+        async(code)=>{
+          await scanner.stop();
+          setScannerActive(false);
+          searchBarcode(code);
+        },
+        ()=>{}
+      );
+    }catch(e){
+      setScannerMsg("Fotocamera non disponibile — inserisci il barcode manualmente");
+    }
+  }
+
   function addFood(food,mealIdx,qty=100){
     const ratio=qty/100;
-    const item={
-      id:food.id,name:food.name,brand:food.brand,qty,
-      cal:Math.round(food.cal*ratio),
-      prot:Math.round(food.prot*ratio*10)/10,
-      carb:Math.round(food.carb*ratio*10)/10,
-      fat:Math.round(food.fat*ratio*10)/10,
-      per100:{cal:food.cal,prot:food.prot,carb:food.carb,fat:food.fat},
-    };
-    setMeals(prev=>{
-      const updated=[...(prev||[])];
-      updated[mealIdx]={...updated[mealIdx],foods:[...(updated[mealIdx].foods||[]),item]};
-      return updated;
-    });
-    setSearch("");setSearchResults([]);setAddingTo(null);
+    const item={id:food.id,name:food.name,brand:food.brand,qty,cal:Math.round(food.cal*ratio),prot:Math.round(food.prot*ratio*10)/10,carb:Math.round(food.carb*ratio*10)/10,fat:Math.round(food.fat*ratio*10)/10,per100:{cal:food.cal,prot:food.prot,carb:food.carb,fat:food.fat}};
+    setMeals(prev=>{const u=[...(prev||[])];u[mealIdx]={...u[mealIdx],foods:[...(u[mealIdx].foods||[]),item]};return u;});
+    setSearch("");setSearchResults([]);setAddingTo(null);setScannerMsg("");
   }
 
   function removeFood(mealIdx,foodIdx){
-    setMeals(prev=>{
-      const updated=[...(prev||[])];
-      updated[mealIdx]={...updated[mealIdx],foods:updated[mealIdx].foods.filter((_,i)=>i!==foodIdx)};
-      return updated;
-    });
+    setMeals(prev=>{const u=[...(prev||[])];u[mealIdx]={...u[mealIdx],foods:u[mealIdx].foods.filter((_,i)=>i!==foodIdx)};return u;});
   }
 
   function updateQty(mealIdx,foodIdx,qty){
     setMeals(prev=>{
-      const updated=[...(prev||[])];
-      const food=updated[mealIdx].foods[foodIdx];
+      const u=[...(prev||[])];
+      const food=u[mealIdx].foods[foodIdx];
       const ratio=qty/100;
-      updated[mealIdx].foods[foodIdx]={...food,qty,
-        cal:Math.round(food.per100.cal*ratio),
-        prot:Math.round(food.per100.prot*ratio*10)/10,
-        carb:Math.round(food.per100.carb*ratio*10)/10,
-        fat:Math.round(food.per100.fat*ratio*10)/10,
-      };
-      return updated;
+      u[mealIdx].foods[foodIdx]={...food,qty,cal:Math.round(food.per100.cal*ratio),prot:Math.round(food.per100.prot*ratio*10)/10,carb:Math.round(food.per100.carb*ratio*10)/10,fat:Math.round(food.per100.fat*ratio*10)/10};
+      return u;
     });
   }
 
-  function addMeal(){
-    setMeals(prev=>[...(prev||[]),{name:`Pasto ${(prev||[]).length+1}`,foods:[]}]);
+  function addMeal(){setMeals(prev=>[...(prev||[]),{name:`Pasto ${(prev||[]).length+1}`,foods:[]}]);}
+  function removeMeal(idx){setMeals(prev=>prev.filter((_,i)=>i!==idx));}
+  function updateMealName(idx,name){setMeals(prev=>{const u=[...prev];u[idx]={...u[idx],name};return u;});}
+
+  async function saveMyFood(){
+    if(!newFood.name||!newFood.cal)return;
+    setSavingFood(true);
+    const{data}=await sb.from("athlete_foods").insert({name:newFood.name,brand:newFood.brand,cal:+newFood.cal,prot:+newFood.prot,carb:+newFood.carb,fat:+newFood.fat,user_id:user.id}).select().single();
+    if(data){
+      const f={id:`my_${data.id}`,dbId:data.id,name:data.name,brand:data.brand||"",cal:data.cal||0,prot:data.prot||0,carb:data.carb||0,fat:data.fat||0,per100:{cal:data.cal||0,prot:data.prot||0,carb:data.carb||0,fat:data.fat||0},source:"I miei"};
+      setMyFoods(p=>[...p,f]);
+      showToast("Alimento salvato");
+    }
+    setNewFood({name:"",brand:"",cal:"",prot:"",carb:"",fat:""});
+    setShowAddFood(false);
+    setSavingFood(false);
   }
 
-  function removeMeal(idx){
-    setMeals(prev=>prev.filter((_,i)=>i!==idx));
-  }
-
-  function updateMealName(idx,name){
-    setMeals(prev=>{const u=[...prev];u[idx]={...u[idx],name};return u;});
+  async function deleteMyFood(dbId){
+    await sb.from("athlete_foods").delete().eq("id",dbId).eq("user_id",user.id);
+    setMyFoods(p=>p.filter(f=>f.dbId!==dbId));
+    showToast("Alimento eliminato");
   }
 
   async function saveMealPlan(){
     setSaving(true);
-    const type=dayTab;
     if(planId){
       await sb.from("athlete_meal_plan").update({meals,updated_at:new Date().toISOString()}).eq("id",planId).eq("user_id",user.id);
     }else{
-      const{data}=await sb.from("athlete_meal_plan").insert({type,meals,user_id:user.id}).select().single();
+      const{data}=await sb.from("athlete_meal_plan").insert({type:dayTab,meals,user_id:user.id}).select().single();
       if(data)setPlanId(data.id);
     }
     setSaving(false);
     showToast("Meal plan salvato");
   }
 
-  const[saving,setSaving]=useState(false);
-
-  const macroColor={cal:C.blue,prot:C.green,carb:C.orange,fat:C.purple};
+  const sourceColor=(s)=>s==="I miei"?C.purple:s==="Barcode"?C.teal:s==="Open Food Facts"?C.green:C.blue;
 
   return(
     <>
-      {/* Selector ON/OFF */}
-      <Seg C={C} options={[{value:"on",label:`Giorno ON`},{value:"off",label:`Giorno OFF`}]} value={dayTab} onChange={setDayTab}/>
+      <Seg C={C} options={[{value:"on",label:"Giorno ON"},{value:"off",label:"Giorno OFF"}]} value={dayTab} onChange={setDayTab}/>
 
-      {/* Totali giornata */}
       {meals.length>0&&(
         <div style={{background:C.bg1,border:`1px solid ${C.borderHi}`,borderRadius:20,padding:16}}>
           <div style={{fontSize:12,color:C.sub,marginBottom:10,fontWeight:500}}>Totale giornata</div>
           <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8}}>
-            {[["Kcal",dayTotals.cal,C.blue],["Prot",dayTotals.prot+"g",C.green],["Carb",dayTotals.carb+"g",C.orange],["Gras",dayTotals.fat+"g",C.purple]].map(([l,v,color])=>(
+            {[["Kcal",Math.round(dayTotals.cal),C.blue],["Prot",Math.round(dayTotals.prot)+"g",C.green],["Carb",Math.round(dayTotals.carb)+"g",C.orange],["Gras",Math.round(dayTotals.fat)+"g",C.purple]].map(([l,v,color])=>(
               <div key={l} style={{textAlign:"center"}}>
                 <div style={{fontSize:16,fontWeight:700,color}}>{v}</div>
                 <div style={{fontSize:10,color:C.muted,marginTop:2}}>{l}</div>
@@ -300,19 +340,28 @@ function MealPlan({C,inp,sb,user,mealPlanOn,setMealPlanOn,mealPlanOnId,setMealPl
         </div>
       )}
 
-      {/* Pasti */}
       {meals.map((meal,mealIdx)=>{
         const mealTotals=meal.foods?.reduce((a,f)=>({cal:a.cal+(f.cal||0),prot:a.prot+(f.prot||0),carb:a.carb+(f.carb||0),fat:a.fat+(f.fat||0)}),{cal:0,prot:0,carb:0,fat:0})||{cal:0,prot:0,carb:0,fat:0};
         return(
           <Card key={mealIdx} C={C}>
-            {/* Header pasto */}
-            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
-              <input value={meal.name} onChange={e=>updateMealName(mealIdx,e.target.value)}
-                style={{background:"none",border:"none",color:C.text,fontSize:14,fontWeight:700,outline:"none",fontFamily:C.f,flex:1}}/>
-              <button onClick={()=>removeMeal(mealIdx)} style={{background:"none",border:"none",color:C.muted,fontSize:18,cursor:"pointer",lineHeight:1}}>×</button>
+            {/* Header pasto con rinomina */}
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14,gap:8}}>
+              {renamingMeal===mealIdx?(
+                <input autoFocus defaultValue={meal.name}
+                  onBlur={e=>{updateMealName(mealIdx,e.target.value||meal.name);setRenamingMeal(null);}}
+                  onKeyDown={e=>{if(e.key==="Enter"){updateMealName(mealIdx,e.target.value||meal.name);setRenamingMeal(null);}}}
+                  style={{...inp,fontSize:15,fontWeight:700,flex:1,padding:"6px 10px"}}/>
+              ):(
+                <div style={{display:"flex",alignItems:"center",gap:8,flex:1,minWidth:0}}>
+                  <span style={{fontSize:15,fontWeight:700,color:C.text,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{meal.name}</span>
+                  <button onClick={()=>setRenamingMeal(mealIdx)} style={{background:"none",border:"none",color:C.muted,cursor:"pointer",padding:0,flexShrink:0}} title="Rinomina">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                  </button>
+                </div>
+              )}
+              <button onClick={()=>removeMeal(mealIdx)} style={{background:"none",border:"none",color:C.muted,fontSize:18,cursor:"pointer",lineHeight:1,flexShrink:0}}>×</button>
             </div>
 
-            {/* Alimenti */}
             {meal.foods?.map((food,foodIdx)=>(
               <div key={foodIdx} style={{padding:"10px 0",borderBottom:`1px solid ${C.border}`}}>
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:6}}>
@@ -322,10 +371,9 @@ function MealPlan({C,inp,sb,user,mealPlanOn,setMealPlanOn,mealPlanOnId,setMealPl
                   </div>
                   <button onClick={()=>removeFood(mealIdx,foodIdx)} style={{background:"none",border:"none",color:C.muted,fontSize:16,cursor:"pointer",marginLeft:8,flexShrink:0}}>×</button>
                 </div>
-                <div style={{display:"flex",alignItems:"center",gap:10}}>
+                <div style={{display:"flex",alignItems:"center",gap:10,flexWrap:"wrap"}}>
                   <div style={{display:"flex",alignItems:"center",gap:4}}>
-                    <input type="number" defaultValue={food.qty}
-                      onBlur={e=>updateQty(mealIdx,foodIdx,+e.target.value||100)}
+                    <input type="number" defaultValue={food.qty} onBlur={e=>updateQty(mealIdx,foodIdx,+e.target.value||100)}
                       style={{...inp,width:70,padding:"5px 8px",fontSize:12,textAlign:"center"}}/>
                     <span style={{fontSize:11,color:C.muted}}>g</span>
                   </div>
@@ -339,64 +387,159 @@ function MealPlan({C,inp,sb,user,mealPlanOn,setMealPlanOn,mealPlanOnId,setMealPl
               </div>
             ))}
 
-            {/* Totale pasto */}
             {(meal.foods?.length||0)>0&&(
               <div style={{display:"flex",gap:10,marginTop:10,padding:"8px 10px",background:C.bg2,borderRadius:10}}>
                 <span style={{fontSize:11,color:C.muted,fontWeight:500}}>Tot:</span>
-                <span style={{fontSize:11,color:C.blue,fontWeight:600}}>{mealTotals.cal} kcal</span>
-                <span style={{fontSize:11,color:C.green}}>P {mealTotals.prot}g</span>
-                <span style={{fontSize:11,color:C.orange}}>C {mealTotals.carb}g</span>
-                <span style={{fontSize:11,color:C.purple}}>G {mealTotals.fat}g</span>
+                <span style={{fontSize:11,color:C.blue,fontWeight:600}}>{Math.round(mealTotals.cal)} kcal</span>
+                <span style={{fontSize:11,color:C.green}}>P {Math.round(mealTotals.prot)}g</span>
+                <span style={{fontSize:11,color:C.orange}}>C {Math.round(mealTotals.carb)}g</span>
+                <span style={{fontSize:11,color:C.purple}}>G {Math.round(mealTotals.fat)}g</span>
               </div>
             )}
 
-            {/* Cerca alimento */}
             {addingTo===mealIdx?(
               <div style={{marginTop:12}}>
-                <div style={{display:"flex",gap:8,marginBottom:8}}>
-                  <input value={search} onChange={e=>setSearch(e.target.value)}
-                    onKeyDown={e=>e.key==="Enter"&&searchFood(search)}
-                    placeholder="Cerca alimento… (es: chicken breast)" style={{...inp,flex:1}}/>
-                  <button onClick={()=>searchFood(search)}
-                    style={{padding:"0 14px",background:C.blue,border:"none",borderRadius:12,color:"#fff",fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:C.f,flexShrink:0}}>
-                    {searching?"…":"Cerca"}
-                  </button>
-                  <button onClick={()=>{setAddingTo(null);setSearch("");setSearchResults([]);}}
-                    style={{padding:"0 12px",background:C.bg3,border:`1px solid ${C.border}`,borderRadius:12,color:C.sub,fontSize:12,cursor:"pointer",fontFamily:C.f}}>
-                    ✕
-                  </button>
+                {/* Tab cerca/miei/barcode */}
+                <div style={{display:"flex",background:C.bg3,borderRadius:12,padding:3,gap:2,marginBottom:10}}>
+                  {[["cerca","Cerca"],["miei","I miei"],["barcode","Barcode"]].map(([v,l])=>(
+                    <button key={v} onClick={()=>{setSearchTab(v);setSearchResults([]);setSearch("");setScannerMsg("");setScannerActive(false);}}
+                      style={{flex:1,padding:"7px 0",border:"none",borderRadius:9,background:searchTab===v?C.bg1:"transparent",color:searchTab===v?C.text:C.sub,fontSize:11,fontWeight:searchTab===v?600:400,cursor:"pointer",fontFamily:C.f,transition:"all 0.15s"}}>
+                      {l}
+                    </button>
+                  ))}
                 </div>
-                {searchResults.length>0&&(
-                  <div style={{background:C.bg2,border:`1px solid ${C.border}`,borderRadius:12,overflow:"hidden"}}>
-                    {searchResults.map((r,ri)=>(
-                      <div key={ri} onClick={()=>addFood(r,mealIdx,100)}
-                        style={{padding:"10px 14px",borderBottom:ri<searchResults.length-1?`1px solid ${C.border}`:"none",cursor:"pointer"}}>
-                        <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:4}}>
-                          <div style={{flex:1,minWidth:0}}>
-                            <div style={{fontSize:12,fontWeight:500,color:C.text,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{r.name}</div>
-                            <div style={{display:"flex",gap:6,alignItems:"center",marginTop:2}}>
-                              {r.brand&&<span style={{fontSize:10,color:C.muted}}>{r.brand}</span>}
-                              <span style={{fontSize:9,background:r.source==="USDA"?`${C.blue}14`:`${C.green}14`,color:r.source==="USDA"?C.blue:C.green,borderRadius:4,padding:"1px 5px",fontWeight:500}}>{r.source}</span>
+
+                {searchTab==="cerca"&&(
+                  <>
+                    <div style={{display:"flex",gap:8,marginBottom:8}}>
+                      <input value={search} onChange={e=>setSearch(e.target.value)} onKeyDown={e=>e.key==="Enter"&&searchFood(search)}
+                        placeholder="Es: Fage, riso, pasta barilla…" style={{...inp,flex:1}}/>
+                      <button onClick={()=>searchFood(search)} style={{padding:"0 14px",background:C.blue,border:"none",borderRadius:12,color:"#fff",fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:C.f,flexShrink:0}}>
+                        {searching?"…":"Cerca"}
+                      </button>
+                      <button onClick={()=>{setAddingTo(null);setSearch("");setSearchResults([]);}}
+                        style={{padding:"0 12px",background:C.bg3,border:`1px solid ${C.border}`,borderRadius:12,color:C.sub,fontSize:12,cursor:"pointer",fontFamily:C.f}}>✕</button>
+                    </div>
+                    {searchResults.length>0&&(
+                      <div style={{background:C.bg2,border:`1px solid ${C.border}`,borderRadius:12,overflow:"hidden",maxHeight:300,overflowY:"auto"}}>
+                        {searchResults.map((r,ri)=>(
+                          <div key={ri} onClick={()=>addFood(r,mealIdx,100)}
+                            style={{padding:"10px 14px",borderBottom:ri<searchResults.length-1?`1px solid ${C.border}`:"none",cursor:"pointer"}}>
+                            <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:3}}>
+                              <div style={{flex:1,minWidth:0}}>
+                                <div style={{fontSize:12,fontWeight:500,color:C.text,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{r.name}</div>
+                                <div style={{display:"flex",gap:5,alignItems:"center",marginTop:2}}>
+                                  {r.brand&&<span style={{fontSize:10,color:C.muted}}>{r.brand}</span>}
+                                  <span style={{fontSize:9,background:`${sourceColor(r.source)}14`,color:sourceColor(r.source),borderRadius:4,padding:"1px 5px",fontWeight:500}}>{r.source}</span>
+                                </div>
+                              </div>
+                              <span style={{fontSize:11,color:C.blue,fontWeight:600,flexShrink:0,marginLeft:8}}>{r.cal} kcal</span>
+                            </div>
+                            <div style={{display:"flex",gap:8}}>
+                              <span style={{fontSize:10,color:C.green}}>P {r.prot}g</span>
+                              <span style={{fontSize:10,color:C.orange}}>C {r.carb}g</span>
+                              <span style={{fontSize:10,color:C.purple}}>G {r.fat}g</span>
+                              <span style={{fontSize:10,color:C.muted}}>per 100g</span>
                             </div>
                           </div>
-                          <div style={{fontSize:11,color:C.blue,flexShrink:0,marginLeft:8,fontWeight:600}}>{r.cal} kcal</div>
-                        </div>
-                        <div style={{display:"flex",gap:8}}>
-                          <span style={{fontSize:10,color:C.green}}>P {r.prot}g</span>
-                          <span style={{fontSize:10,color:C.orange}}>C {r.carb}g</span>
-                          <span style={{fontSize:10,color:C.purple}}>G {r.fat}g</span>
-                          <span style={{fontSize:10,color:C.muted}}>per 100g</span>
+                        ))}
+                      </div>
+                    )}
+                    {searchResults.length===0&&!searching&&search&&(
+                      <div style={{fontSize:12,color:C.muted,textAlign:"center",padding:12}}>Nessun risultato</div>
+                    )}
+                  </>
+                )}
+
+                {searchTab==="miei"&&(
+                  <div>
+                    {myFoods.length===0?(
+                      <div style={{fontSize:12,color:C.muted,textAlign:"center",padding:16}}>Nessun alimento salvato — aggiungine uno sotto</div>
+                    ):(
+                      <div style={{background:C.bg2,border:`1px solid ${C.border}`,borderRadius:12,overflow:"hidden",maxHeight:280,overflowY:"auto",marginBottom:8}}>
+                        {myFoods.map((f,fi)=>(
+                          <div key={fi} style={{padding:"10px 14px",borderBottom:fi<myFoods.length-1?`1px solid ${C.border}`:"none",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                            <div onClick={()=>addFood(f,mealIdx,100)} style={{flex:1,cursor:"pointer"}}>
+                              <div style={{fontSize:12,fontWeight:500,color:C.text}}>{f.name}</div>
+                              {f.brand&&<div style={{fontSize:10,color:C.muted}}>{f.brand}</div>}
+                              <div style={{display:"flex",gap:8,marginTop:3}}>
+                                <span style={{fontSize:10,color:C.blue,fontWeight:600}}>{f.cal} kcal</span>
+                                <span style={{fontSize:10,color:C.green}}>P {f.prot}g</span>
+                                <span style={{fontSize:10,color:C.orange}}>C {f.carb}g</span>
+                                <span style={{fontSize:10,color:C.purple}}>G {f.fat}g</span>
+                                <span style={{fontSize:10,color:C.muted}}>per 100g</span>
+                              </div>
+                            </div>
+                            <button onClick={()=>deleteMyFood(f.dbId)} style={{background:"none",border:"none",color:C.muted,fontSize:16,cursor:"pointer",marginLeft:8}}>×</button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    {!showAddFood?(
+                      <button onClick={()=>setShowAddFood(true)}
+                        style={{width:"100%",padding:"8px 0",background:`${C.purple}10`,border:`1px dashed ${C.purple}40`,borderRadius:10,color:C.purple,fontSize:12,fontWeight:500,cursor:"pointer",fontFamily:C.f}}>
+                        + Nuovo alimento
+                      </button>
+                    ):(
+                      <div style={{background:C.bg2,border:`1px solid ${C.border}`,borderRadius:12,padding:14}}>
+                        <div style={{fontSize:12,fontWeight:600,color:C.text,marginBottom:10}}>Nuovo alimento</div>
+                        <div style={{display:"flex",flexDirection:"column",gap:8}}>
+                          <input placeholder="Nome *" value={newFood.name} onChange={e=>setNewFood(p=>({...p,name:e.target.value}))} style={{...inp,fontSize:12,padding:"8px 10px"}}/>
+                          <input placeholder="Marca (opzionale)" value={newFood.brand} onChange={e=>setNewFood(p=>({...p,brand:e.target.value}))} style={{...inp,fontSize:12,padding:"8px 10px"}}/>
+                          <div style={{display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:8}}>
+                            {[["Calorie *","cal","kcal"],["Proteine","prot","g"],["Carboidrati","carb","g"],["Grassi","fat","g"]].map(([l,k,u])=>(
+                              <div key={k} style={{position:"relative"}}>
+                                <input type="number" placeholder={l} value={newFood[k]} onChange={e=>setNewFood(p=>({...p,[k]:e.target.value}))}
+                                  style={{...inp,fontSize:12,padding:"8px 30px 8px 10px"}}/>
+                                <span style={{position:"absolute",right:8,top:"50%",transform:"translateY(-50%)",fontSize:10,color:C.muted}}>{u}</span>
+                              </div>
+                            ))}
+                          </div>
+                          <div style={{display:"flex",gap:8}}>
+                            <button onClick={()=>{setShowAddFood(false);setNewFood({name:"",brand:"",cal:"",prot:"",carb:"",fat:""});}}
+                              style={{flex:1,padding:8,background:C.bg3,border:`1px solid ${C.border}`,borderRadius:8,color:C.sub,fontSize:12,cursor:"pointer",fontFamily:C.f}}>Annulla</button>
+                            <button onClick={saveMyFood} disabled={savingFood||!newFood.name||!newFood.cal}
+                              style={{flex:2,padding:8,background:C.purple,border:"none",borderRadius:8,color:"#fff",fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:C.f,opacity:savingFood?0.7:1}}>
+                              {savingFood?"…":"Salva"}
+                            </button>
+                          </div>
                         </div>
                       </div>
-                    ))}
+                    )}
                   </div>
                 )}
-                {searchResults.length===0&&!searching&&search&&(
-                  <div style={{fontSize:12,color:C.muted,textAlign:"center",padding:12}}>Nessun risultato — prova in italiano o inglese</div>
+
+                {searchTab==="barcode"&&(
+                  <div>
+                    <div id="qr-reader" style={{width:"100%",borderRadius:12,overflow:"hidden",marginBottom:8}}/>
+                    {!scannerActive&&(
+                      <button onClick={startScanner}
+                        style={{width:"100%",padding:11,background:`linear-gradient(135deg,${C.teal},${C.blue})`,border:"none",borderRadius:12,color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:C.f,marginBottom:8}}>
+                        📷 Avvia scanner
+                      </button>
+                    )}
+                    {scannerMsg&&<div style={{fontSize:12,color:C.sub,textAlign:"center",marginBottom:8}}>{scannerMsg}</div>}
+                    {searchResults.length>0&&(
+                      <div style={{background:C.bg2,border:`1px solid ${C.border}`,borderRadius:12,overflow:"hidden"}}>
+                        {searchResults.map((r,ri)=>(
+                          <div key={ri} onClick={()=>addFood(r,mealIdx,100)} style={{padding:"12px 14px",cursor:"pointer"}}>
+                            <div style={{fontSize:13,fontWeight:600,color:C.text,marginBottom:4}}>{r.name}</div>
+                            {r.brand&&<div style={{fontSize:11,color:C.muted,marginBottom:6}}>{r.brand}</div>}
+                            <div style={{display:"flex",gap:10}}>
+                              <span style={{fontSize:12,color:C.blue,fontWeight:600}}>{r.cal} kcal</span>
+                              <span style={{fontSize:12,color:C.green}}>P {r.prot}g</span>
+                              <span style={{fontSize:12,color:C.orange}}>C {r.carb}g</span>
+                              <span style={{fontSize:12,color:C.purple}}>G {r.fat}g</span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 )}
               </div>
             ):(
-              <button onClick={()=>setAddingTo(mealIdx)}
+              <button onClick={()=>{setAddingTo(mealIdx);setSearchTab("cerca");setSearchResults([]);setSearch("");}}
                 style={{marginTop:12,width:"100%",padding:"8px 0",background:`${C.blue}10`,border:`1px dashed ${C.blue}40`,borderRadius:10,color:C.blue,fontSize:12,fontWeight:500,cursor:"pointer",fontFamily:C.f}}>
                 + Aggiungi alimento
               </button>
@@ -405,13 +548,11 @@ function MealPlan({C,inp,sb,user,mealPlanOn,setMealPlanOn,mealPlanOnId,setMealPl
         );
       })}
 
-      {/* Aggiungi pasto */}
       <button onClick={addMeal}
         style={{width:"100%",padding:13,background:C.bg1,border:`1.5px dashed ${C.border}`,borderRadius:14,color:C.sub,fontSize:13,fontWeight:500,cursor:"pointer",fontFamily:C.f}}>
         + Aggiungi pasto
       </button>
 
-      {/* Salva */}
       {meals.length>0&&(
         <button onClick={saveMealPlan} disabled={saving}
           style={{width:"100%",padding:13,background:`linear-gradient(135deg,${C.blue},${C.indigo})`,border:"none",borderRadius:14,color:"#fff",fontSize:14,fontWeight:600,cursor:"pointer",fontFamily:C.f,opacity:saving?0.7:1,boxShadow:`0 4px 16px ${C.blue}30`}}>
@@ -421,6 +562,7 @@ function MealPlan({C,inp,sb,user,mealPlanOn,setMealPlanOn,mealPlanOnId,setMealPl
     </>
   );
 }
+
 
 // ─── PLANNING SETUP ───────────────────────────────────────────────────────────
 function PlanningSetup({C,inp,lastW,plan,todayStr,fmtShort,setPlanning,setPlanningView}){
