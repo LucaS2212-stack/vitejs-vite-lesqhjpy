@@ -205,22 +205,7 @@ function MealPlan({C,inp,sb,user,mealPlanOn,setMealPlanOn,mealPlanOnId,setMealPl
         body:JSON.stringify({query:q})
       });
       const data=await res.json();
-      const results=(data.foods||[]).map(f=>({
-        id:f.fdcId,
-        name:f.description,
-        brand:f.brandOwner||f.brandName||"",
-        cal:Math.round(f.foodNutrients?.find(n=>n.nutrientId===1008)?.value||0),
-        prot:Math.round((f.foodNutrients?.find(n=>n.nutrientId===1003)?.value||0)*10)/10,
-        carb:Math.round((f.foodNutrients?.find(n=>n.nutrientId===1005)?.value||0)*10)/10,
-        fat:Math.round((f.foodNutrients?.find(n=>n.nutrientId===1004)?.value||0)*10)/10,
-        per100:{
-          cal:Math.round(f.foodNutrients?.find(n=>n.nutrientId===1008)?.value||0),
-          prot:Math.round((f.foodNutrients?.find(n=>n.nutrientId===1003)?.value||0)*10)/10,
-          carb:Math.round((f.foodNutrients?.find(n=>n.nutrientId===1005)?.value||0)*10)/10,
-          fat:Math.round((f.foodNutrients?.find(n=>n.nutrientId===1004)?.value||0)*10)/10,
-        },
-      }));
-      setSearchResults(results);
+      setSearchResults(data.results||[]);
     }catch(e){console.error(e);setSearchResults([]);}
     setSearching(false);
   }
@@ -389,7 +374,10 @@ function MealPlan({C,inp,sb,user,mealPlanOn,setMealPlanOn,mealPlanOnId,setMealPl
                         <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:4}}>
                           <div style={{flex:1,minWidth:0}}>
                             <div style={{fontSize:12,fontWeight:500,color:C.text,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{r.name}</div>
-                            {r.brand&&<div style={{fontSize:10,color:C.muted}}>{r.brand}</div>}
+                            <div style={{display:"flex",gap:6,alignItems:"center",marginTop:2}}>
+                              {r.brand&&<span style={{fontSize:10,color:C.muted}}>{r.brand}</span>}
+                              <span style={{fontSize:9,background:r.source==="USDA"?`${C.blue}14`:`${C.green}14`,color:r.source==="USDA"?C.blue:C.green,borderRadius:4,padding:"1px 5px",fontWeight:500}}>{r.source}</span>
+                            </div>
                           </div>
                           <div style={{fontSize:11,color:C.blue,flexShrink:0,marginLeft:8,fontWeight:600}}>{r.cal} kcal</div>
                         </div>
@@ -404,7 +392,7 @@ function MealPlan({C,inp,sb,user,mealPlanOn,setMealPlanOn,mealPlanOnId,setMealPl
                   </div>
                 )}
                 {searchResults.length===0&&!searching&&search&&(
-                  <div style={{fontSize:12,color:C.muted,textAlign:"center",padding:12}}>Nessun risultato — prova in inglese (es: chicken, rice, egg)</div>
+                  <div style={{fontSize:12,color:C.muted,textAlign:"center",padding:12}}>Nessun risultato — prova in italiano o inglese</div>
                 )}
               </div>
             ):(
