@@ -1102,25 +1102,32 @@ export default function App(){
                               <span style={{fontSize:13,fontWeight:600,color:isCurrent?typeColor:C.text}}>{w.weightTarget} kg</span>
                             </div>
                             {planningView==="edit"?(
-                              <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(100px,1fr))",gap:8,marginBottom:8}}>
-                                {[["Cal ON","onCal","kcal"],["Cal OFF","offCal","kcal"],["P ON","onP","g"],["C ON","onC","g"],["G ON","onF","g"],["Peso target","weightTarget","kg"]].map(([l,k,u])=>(
+                              <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(120px,1fr))",gap:10,marginBottom:8}}>
+                                {[
+                                  ["Calorie ON","onCal","kcal",C.blue],
+                                  ["Calorie OFF","offCal","kcal",C.teal],
+                                  ["Proteine","onP","g",C.green],
+                                  ["Carboidrati","onC","g",C.orange],
+                                  ["Grassi","onF","g",C.purple],
+                                  ["Peso target","weightTarget","kg",C.text],
+                                ].map(([l,k,u,color])=>(
                                   <div key={k}>
-                                    <div style={{fontSize:10,color:C.muted,marginBottom:3}}>{l}</div>
+                                    <div style={{fontSize:12,color:C.sub,marginBottom:6,fontWeight:500}}>{l}</div>
                                     <div style={{position:"relative"}}>
                                       <input type="number" defaultValue={w[k]} onBlur={e=>updateWeek(i,k,e.target.value?+e.target.value:w[k])}
-                                        style={{...inp,padding:"7px 28px 7px 10px",fontSize:12}}/>
-                                      <span style={{position:"absolute",right:7,top:"50%",transform:"translateY(-50%)",fontSize:10,color:C.muted,pointerEvents:"none"}}>{u}</span>
+                                        style={{...inp,paddingRight:36,fontSize:13}}/>
+                                      <span style={{position:"absolute",right:9,top:"50%",transform:"translateY(-50%)",fontSize:11,color:C.muted,pointerEvents:"none"}}>{u}</span>
                                     </div>
                                   </div>
                                 ))}
                               </div>
                             ):(
                               <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
-                                <span style={{fontSize:11,background:`${C.blue}14`,color:C.blue,borderRadius:6,padding:"2px 8px"}}>ON {w.onCal} kcal</span>
-                                <span style={{fontSize:11,background:`${C.teal}14`,color:C.teal,borderRadius:6,padding:"2px 8px"}}>OFF {w.offCal} kcal</span>
-                                {w.onP&&<span style={{fontSize:11,color:C.green}}>P {w.onP}g</span>}
-                                {w.onC&&<span style={{fontSize:11,color:C.orange}}>C {w.onC}g</span>}
-                                {w.onF&&<span style={{fontSize:11,color:C.purple}}>G {w.onF}g</span>}
+                                <span style={{fontSize:12,background:`${C.blue}14`,color:C.blue,borderRadius:6,padding:"3px 10px",fontWeight:500}}>ON {w.onCal} kcal</span>
+                                <span style={{fontSize:12,background:`${C.teal}14`,color:C.teal,borderRadius:6,padding:"3px 10px",fontWeight:500}}>OFF {w.offCal} kcal</span>
+                                {w.onP&&<span style={{fontSize:12,color:C.green,fontWeight:500}}>Prot {w.onP}g</span>}
+                                {w.onC&&<span style={{fontSize:12,color:C.orange,fontWeight:500}}>Carb {w.onC}g</span>}
+                                {w.onF&&<span style={{fontSize:12,color:C.purple,fontWeight:500}}>Gras {w.onF}g</span>}
                               </div>
                             )}
                             {planningView==="edit"?(
@@ -1144,6 +1151,16 @@ export default function App(){
                         </button>
                       )}
                     </div>
+                    {planning.id&&(
+                      <button onClick={async()=>{
+                        if(!window.confirm("Eliminare il piano? Non si può annullare."))return;
+                        await sb.from("athlete_planning").delete().eq("id",planning.id).eq("user_id",user.id);
+                        setPlanning(null);setPlanningView("setup");showToast("Piano eliminato");
+                      }}
+                        style={{width:"100%",padding:11,background:`${C.red}10`,border:`1px solid ${C.red}20`,borderRadius:12,color:C.red,fontSize:13,fontWeight:500,cursor:"pointer",fontFamily:C.f}}>
+                        Elimina piano
+                      </button>
+                    )}
                   </>
                 );
               })()}
