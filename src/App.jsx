@@ -1188,6 +1188,33 @@ export default function App(){
                                     <span style={{position:"absolute",right:9,top:"50%",transform:"translateY(-50%)",fontSize:11,color:C.muted,pointerEvents:"none"}}>kg</span>
                                   </div>
                                 </div>
+                                <div style={{marginTop:12,padding:"10px 14px",background:C.bg2,borderRadius:12,border:`1px solid ${C.border}`}}>
+                                  <div style={{fontSize:11,color:C.sub,marginBottom:8,fontWeight:500}}>Applica questi valori alle settimane successive</div>
+                                  <div style={{display:"flex",gap:8,alignItems:"center"}}>
+                                    <span style={{fontSize:12,color:C.text}}>Dalla sett. {w.week+1} per</span>
+                                    <input type="number" min="1" max={planning.weeks.length-i-1} defaultValue={Math.min(3,planning.weeks.length-i-1)}
+                                      id={`apply-count-${i}`}
+                                      style={{...inp,width:60,padding:"6px 8px",fontSize:13,textAlign:"center"}}/>
+                                    <span style={{fontSize:12,color:C.text}}>sett.</span>
+                                    <button onClick={()=>{
+                                      const count=parseInt(document.getElementById(`apply-count-${i}`)?.value)||1;
+                                      const fields=["onCal","offCal","onP","onC","onF","offP","offC","offF"];
+                                      setPlanning(p=>({...p,weeks:p.weeks.map((wk,wi)=>{
+                                        if(wi>i&&wi<=i+count){
+                                          const updated={...wk};
+                                          fields.forEach(f=>{if(w[f]!=null)updated[f]=w[f];});
+                                          return updated;
+                                        }
+                                        return wk;
+                                      })}));
+                                      showToast(`Applicato alle prossime ${count} settimane`);
+                                    }}
+                                      style={{padding:"6px 14px",background:C.blue,border:"none",borderRadius:8,color:"#fff",fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:C.f,whiteSpace:"nowrap"}}>
+                                      Applica
+                                    </button>
+                                  </div>
+                                  {i===planning.weeks.length-1&&<div style={{fontSize:10,color:C.muted,marginTop:6}}>Ultima settimana — nessuna successiva</div>}
+                                </div>
                               </>
                             ):(
                               <div style={{display:"flex",flexDirection:"column",gap:8}}>
