@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { createClient } from "@supabase/supabase-js";
+import { Html5Qrcode } from "html5-qrcode";
 
 const SUPA_URL = "https://hpqvusmnutpqomtbobxb.supabase.co";
 const SUPA_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhwcXZ1c21udXRwcW9tdGJvYnhiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAwOTE1NDUsImV4cCI6MjA5NTY2NzU0NX0.S6yRy_nl4Dd22cV9W4lg9HgzTLpaKcsxKYvgn-J6CRU";
@@ -246,7 +247,6 @@ function MealPlan({C,inp,sb,user,mealPlanOn,setMealPlanOn,mealPlanOnId,setMealPl
     setScannerActive(true);
     setScannerMsg("Avvio fotocamera…");
     try{
-      const{Html5Qrcode}=await import("https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.esm.js");
       const scanner=new Html5Qrcode("qr-reader");
       await scanner.start(
         {facingMode:"environment"},
@@ -259,6 +259,7 @@ function MealPlan({C,inp,sb,user,mealPlanOn,setMealPlanOn,mealPlanOnId,setMealPl
         ()=>{}
       );
     }catch(e){
+      setScannerActive(false);
       setScannerMsg("Fotocamera non disponibile — inserisci il barcode manualmente");
     }
   }
@@ -519,6 +520,12 @@ function MealPlan({C,inp,sb,user,mealPlanOn,setMealPlanOn,mealPlanOnId,setMealPl
                       </button>
                     )}
                     {scannerMsg&&<div style={{fontSize:12,color:C.sub,textAlign:"center",marginBottom:8}}>{scannerMsg}</div>}
+                    <div style={{display:"flex",gap:8,marginBottom:8}}>
+                      <input placeholder="Oppure inserisci barcode manualmente…" id="manual-barcode"
+                        style={{...inp,flex:1,fontSize:12}} onKeyDown={e=>{if(e.key==="Enter"&&e.target.value){searchBarcode(e.target.value);e.target.value="";}}}/>
+                      <button onClick={()=>{const v=document.getElementById("manual-barcode")?.value;if(v){searchBarcode(v);document.getElementById("manual-barcode").value="";}}}
+                        style={{padding:"0 12px",background:C.teal,border:"none",borderRadius:12,color:"#fff",fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:C.f,flexShrink:0}}>Cerca</button>
+                    </div>
                     {searchResults.length>0&&(
                       <div style={{background:C.bg2,border:`1px solid ${C.border}`,borderRadius:12,overflow:"hidden"}}>
                         {searchResults.map((r,ri)=>(
