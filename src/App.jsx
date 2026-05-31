@@ -1056,10 +1056,10 @@ export default function App(){
                       <KPI C={C} label="Cal finali ON" value={planning.weeks[planning.weeks.length-1]?.onCal} unit="kcal" color={typeColor}/>
                     </div>
 
-                    {/* Grafico */}
+                    {/* Grafico calorie */}
                     <Card C={C}>
-                      <div style={{fontSize:13,fontWeight:600,color:C.text,marginBottom:14}}>Progressione calorie + peso</div>
-                      <ResponsiveContainer width="100%" height={180}>
+                      <div style={{fontSize:13,fontWeight:600,color:C.text,marginBottom:14}}>Progressione calorie pianificate</div>
+                      <ResponsiveContainer width="100%" height={160}>
                         <AreaChart data={chartData}>
                           <defs>
                             <linearGradient id="pgon" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor={C.blue} stopOpacity={0.18}/><stop offset="95%" stopColor={C.blue} stopOpacity={0}/></linearGradient>
@@ -1067,11 +1067,10 @@ export default function App(){
                           </defs>
                           <CartesianGrid strokeDasharray="3 3" stroke={isDark?"rgba(255,255,255,0.04)":"rgba(0,0,0,0.04)"} vertical={false}/>
                           <XAxis dataKey="week" tick={{fill:C.muted,fontSize:9}} axisLine={false} tickLine={false}/>
-                          <YAxis yAxisId="cal" tick={{fill:C.muted,fontSize:9}} axisLine={false} tickLine={false} domain={["auto","auto"]} width={36}/>
-                          <YAxis yAxisId="w" orientation="right" tick={{fill:C.muted,fontSize:9}} axisLine={false} tickLine={false} domain={["auto","auto"]} width={36}/>
+                          <YAxis tick={{fill:C.muted,fontSize:9}} axisLine={false} tickLine={false} domain={["auto","auto"]} width={36}/>
                           <Tooltip content={<CTip C={C}/>}/>
-                          <Area yAxisId="cal" type="monotone" dataKey="Cal ON" stroke={C.blue} strokeWidth={2} fill="url(#pgon)" dot={false}/>
-                          <Area yAxisId="cal" type="monotone" dataKey="Cal OFF" stroke={C.teal} strokeWidth={1.5} strokeDasharray="4 3" fill="url(#pgoff)" dot={false}/>
+                          <Area type="monotone" dataKey="Cal ON" stroke={C.blue} strokeWidth={2} fill="url(#pgon)" dot={false}/>
+                          <Area type="monotone" dataKey="Cal OFF" stroke={C.teal} strokeWidth={1.5} strokeDasharray="4 3" fill="url(#pgoff)" dot={false}/>
                         </AreaChart>
                       </ResponsiveContainer>
                       <div style={{display:"flex",gap:12,marginTop:8}}>
@@ -1079,6 +1078,41 @@ export default function App(){
                         <div style={{display:"flex",gap:4,alignItems:"center"}}><div style={{width:12,height:2,background:C.teal,borderRadius:99,opacity:0.7}}/><span style={{fontSize:10,color:C.muted}}>Cal OFF</span></div>
                       </div>
                     </Card>
+
+                    {/* Grafico peso pianificato vs reale */}
+                    {(()=>{
+                      const weightCompChart=planning.weeks.map(w=>{
+                        const realW=weightLog.find(wl=>wl.date>=w.date&&wl.date<(planning.weeks[planning.weeks.indexOf(w)+1]?.date||"9999"))?.weight||null;
+                        return{week:`S${w.week}`,Pianificato:w.weightTarget,Reale:realW};
+                      });
+                      const hasReal=weightCompChart.some(d=>d.Reale!=null);
+                      return(
+                        <Card C={C}>
+                          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
+                            <span style={{fontSize:13,fontWeight:600,color:C.text}}>Peso pianificato vs reale</span>
+                          </div>
+                          <ResponsiveContainer width="100%" height={160}>
+                            <AreaChart data={weightCompChart}>
+                              <defs>
+                                <linearGradient id="pwplan" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor={C.muted} stopOpacity={0.1}/><stop offset="95%" stopColor={C.muted} stopOpacity={0}/></linearGradient>
+                                <linearGradient id="pwreal" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor={C.teal} stopOpacity={0.2}/><stop offset="95%" stopColor={C.teal} stopOpacity={0}/></linearGradient>
+                              </defs>
+                              <CartesianGrid strokeDasharray="3 3" stroke={isDark?"rgba(255,255,255,0.04)":"rgba(0,0,0,0.04)"} vertical={false}/>
+                              <XAxis dataKey="week" tick={{fill:C.muted,fontSize:9}} axisLine={false} tickLine={false}/>
+                              <YAxis tick={{fill:C.muted,fontSize:9}} axisLine={false} tickLine={false} domain={["auto","auto"]} width={36}/>
+                              <Tooltip content={<CTip C={C}/>}/>
+                              <Area type="monotone" dataKey="Pianificato" stroke={C.muted} strokeWidth={1.5} strokeDasharray="5 3" fill="url(#pwplan)" dot={false}/>
+                              {hasReal&&<Area type="monotone" dataKey="Reale" stroke={C.teal} strokeWidth={2} fill="url(#pwreal)" dot={{fill:C.teal,r:3,strokeWidth:0}} connectNulls={false}/>}
+                            </AreaChart>
+                          </ResponsiveContainer>
+                          <div style={{display:"flex",gap:12,marginTop:8}}>
+                            <div style={{display:"flex",gap:4,alignItems:"center"}}><div style={{width:14,height:2,background:C.muted,borderRadius:99,opacity:0.6}}/><span style={{fontSize:10,color:C.muted}}>Pianificato</span></div>
+                            <div style={{display:"flex",gap:4,alignItems:"center"}}><div style={{width:14,height:2,background:C.teal,borderRadius:99}}/><span style={{fontSize:10,color:C.muted}}>Reale</span></div>
+                            {!hasReal&&<span style={{fontSize:10,color:C.muted,fontStyle:"italic"}}>— il peso reale apparirà settimana per settimana</span>}
+                          </div>
+                        </Card>
+                      );
+                    })()}
 
                     {/* Tabella settimane */}
                     <Card C={C}>
@@ -1091,43 +1125,90 @@ export default function App(){
                         const isCurrent=i===currentWeekIdx;
                         const isPast=currentWeekIdx>=0&&i<currentWeekIdx;
                         return(
-                          <div key={i} style={{padding:"14px 0",borderBottom:i<planning.weeks.length-1?`1px solid ${C.border}`:"none",opacity:isPast?0.6:1}}>
-                            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
-                              <div style={{display:"flex",alignItems:"center",gap:8}}>
-                                <div style={{width:24,height:24,borderRadius:99,background:isCurrent?typeColor:isPast?C.bg3:C.bg2,display:"flex",alignItems:"center",justifyContent:"center"}}>
-                                  <span style={{fontSize:10,fontWeight:600,color:isCurrent?"#fff":C.sub}}>{w.week}</span>
+                          <div key={i} style={{padding:"16px 0",borderBottom:i<planning.weeks.length-1?`1px solid ${C.border}`:"none",opacity:isPast?0.5:1}}>
+                            {/* Riga header settimana */}
+                            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
+                              <div style={{display:"flex",alignItems:"center",gap:10}}>
+                                <div style={{width:28,height:28,borderRadius:99,background:isCurrent?typeColor:isPast?C.bg3:C.bg2,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                                  <span style={{fontSize:11,fontWeight:700,color:isCurrent?"#fff":C.sub}}>{w.week}</span>
                                 </div>
-                                <span style={{fontSize:12,color:isCurrent?typeColor:C.sub,fontWeight:isCurrent?600:400}}>{fmtShort(w.date)}{isCurrent?" · ora":""}</span>
+                                <div>
+                                  <span style={{fontSize:13,color:isCurrent?typeColor:C.text,fontWeight:isCurrent?700:500}}>{fmtShort(w.date)}</span>
+                                  {isCurrent&&<span style={{fontSize:11,color:typeColor,marginLeft:6}}>← ora</span>}
+                                </div>
                               </div>
-                              <span style={{fontSize:13,fontWeight:600,color:isCurrent?typeColor:C.text}}>{w.weightTarget} kg</span>
+                              <span style={{fontSize:14,fontWeight:700,color:isCurrent?typeColor:C.text}}>{w.weightTarget} kg</span>
                             </div>
                             {planningView==="edit"?(
-                              <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(120px,1fr))",gap:10,marginBottom:8}}>
-                                {[
-                                  ["Calorie ON","onCal","kcal",C.blue],
-                                  ["Calorie OFF","offCal","kcal",C.teal],
-                                  ["Proteine","onP","g",C.green],
-                                  ["Carboidrati","onC","g",C.orange],
-                                  ["Grassi","onF","g",C.purple],
-                                  ["Peso target","weightTarget","kg",C.text],
-                                ].map(([l,k,u,color])=>(
-                                  <div key={k}>
-                                    <div style={{fontSize:12,color:C.sub,marginBottom:6,fontWeight:500}}>{l}</div>
-                                    <div style={{position:"relative"}}>
-                                      <input type="number" defaultValue={w[k]} onBlur={e=>updateWeek(i,k,e.target.value?+e.target.value:w[k])}
-                                        style={{...inp,paddingRight:36,fontSize:13}}/>
-                                      <span style={{position:"absolute",right:9,top:"50%",transform:"translateY(-50%)",fontSize:11,color:C.muted,pointerEvents:"none"}}>{u}</span>
+                              <>
+                                <div style={{fontSize:11,color:C.muted,marginBottom:6,fontWeight:500}}>Calorie</div>
+                                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:12}}>
+                                  {[["Calorie ON","onCal","kcal"],["Calorie OFF","offCal","kcal"]].map(([l,k,u])=>(
+                                    <div key={k}>
+                                      <div style={{fontSize:12,color:C.sub,marginBottom:5,fontWeight:500}}>{l}</div>
+                                      <div style={{position:"relative"}}>
+                                        <input type="number" defaultValue={w[k]} onBlur={e=>updateWeek(i,k,e.target.value?+e.target.value:w[k])}
+                                          style={{...inp,paddingRight:36,fontSize:13}}/>
+                                        <span style={{position:"absolute",right:9,top:"50%",transform:"translateY(-50%)",fontSize:11,color:C.muted,pointerEvents:"none"}}>{u}</span>
+                                      </div>
                                     </div>
+                                  ))}
+                                </div>
+                                <div style={{fontSize:11,color:C.muted,marginBottom:6,fontWeight:500}}>Macro ON</div>
+                                <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(100px,1fr))",gap:10,marginBottom:12}}>
+                                  {[["Proteine","onP","g"],["Carboidrati","onC","g"],["Grassi","onF","g"]].map(([l,k,u])=>(
+                                    <div key={k}>
+                                      <div style={{fontSize:12,color:C.sub,marginBottom:5,fontWeight:500}}>{l}</div>
+                                      <div style={{position:"relative"}}>
+                                        <input type="number" defaultValue={w[k]} onBlur={e=>updateWeek(i,k,e.target.value?+e.target.value:w[k])}
+                                          style={{...inp,paddingRight:28,fontSize:13}}/>
+                                        <span style={{position:"absolute",right:9,top:"50%",transform:"translateY(-50%)",fontSize:11,color:C.muted,pointerEvents:"none"}}>{u}</span>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                                <div style={{fontSize:11,color:C.muted,marginBottom:6,fontWeight:500}}>Macro OFF</div>
+                                <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(100px,1fr))",gap:10,marginBottom:10}}>
+                                  {[["Proteine","offP","g"],["Carboidrati","offC","g"],["Grassi","offF","g"]].map(([l,k,u])=>(
+                                    <div key={k}>
+                                      <div style={{fontSize:12,color:C.sub,marginBottom:5,fontWeight:500}}>{l}</div>
+                                      <div style={{position:"relative"}}>
+                                        <input type="number" defaultValue={w[k]||""} onBlur={e=>updateWeek(i,k,e.target.value?+e.target.value:w[k])}
+                                          style={{...inp,paddingRight:28,fontSize:13}}/>
+                                        <span style={{position:"absolute",right:9,top:"50%",transform:"translateY(-50%)",fontSize:11,color:C.muted,pointerEvents:"none"}}>{u}</span>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                                <div>
+                                  <div style={{fontSize:12,color:C.sub,marginBottom:5,fontWeight:500}}>Peso target</div>
+                                  <div style={{position:"relative",maxWidth:140}}>
+                                    <input type="number" defaultValue={w.weightTarget} onBlur={e=>updateWeek(i,"weightTarget",e.target.value?+e.target.value:w.weightTarget)}
+                                      style={{...inp,paddingRight:28,fontSize:13}}/>
+                                    <span style={{position:"absolute",right:9,top:"50%",transform:"translateY(-50%)",fontSize:11,color:C.muted,pointerEvents:"none"}}>kg</span>
                                   </div>
-                                ))}
-                              </div>
+                                </div>
+                              </>
                             ):(
-                              <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
-                                <span style={{fontSize:12,background:`${C.blue}14`,color:C.blue,borderRadius:6,padding:"3px 10px",fontWeight:500}}>ON {w.onCal} kcal</span>
-                                <span style={{fontSize:12,background:`${C.teal}14`,color:C.teal,borderRadius:6,padding:"3px 10px",fontWeight:500}}>OFF {w.offCal} kcal</span>
-                                {w.onP&&<span style={{fontSize:12,color:C.green,fontWeight:500}}>Prot {w.onP}g</span>}
-                                {w.onC&&<span style={{fontSize:12,color:C.orange,fontWeight:500}}>Carb {w.onC}g</span>}
-                                {w.onF&&<span style={{fontSize:12,color:C.purple,fontWeight:500}}>Gras {w.onF}g</span>}
+                              <div style={{display:"flex",flexDirection:"column",gap:8}}>
+                                <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+                                  <span style={{fontSize:12,background:`${C.blue}14`,color:C.blue,borderRadius:6,padding:"3px 10px",fontWeight:500}}>ON {w.onCal} kcal</span>
+                                  <span style={{fontSize:12,background:`${C.teal}14`,color:C.teal,borderRadius:6,padding:"3px 10px",fontWeight:500}}>OFF {w.offCal} kcal</span>
+                                </div>
+                                <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
+                                  <span style={{fontSize:11,color:C.sub,fontWeight:500,minWidth:30}}>ON:</span>
+                                  {w.onP&&<span style={{fontSize:12,color:C.green,fontWeight:500}}>Prot {w.onP}g</span>}
+                                  {w.onC&&<span style={{fontSize:12,color:C.orange,fontWeight:500}}>Carb {w.onC}g</span>}
+                                  {w.onF&&<span style={{fontSize:12,color:C.purple,fontWeight:500}}>Gras {w.onF}g</span>}
+                                </div>
+                                {(w.offP||w.offC||w.offF)&&(
+                                  <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
+                                    <span style={{fontSize:11,color:C.sub,fontWeight:500,minWidth:30}}>OFF:</span>
+                                    {w.offP&&<span style={{fontSize:12,color:C.green,fontWeight:500}}>Prot {w.offP}g</span>}
+                                    {w.offC&&<span style={{fontSize:12,color:C.orange,fontWeight:500}}>Carb {w.offC}g</span>}
+                                    {w.offF&&<span style={{fontSize:12,color:C.purple,fontWeight:500}}>Gras {w.offF}g</span>}
+                                  </div>
+                                )}
                               </div>
                             )}
                             {planningView==="edit"?(
