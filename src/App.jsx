@@ -191,6 +191,8 @@ function MealPlan({C,inp,sb,user,mealPlanOn,setMealPlanOn,mealPlanOnId,setMealPl
   const[scannerMsg,setScannerMsg]=useState("");
   const[renamingMeal,setRenamingMeal]=useState(null);
   const[saving,setSaving]=useState(false);
+  const[editingFood,setEditingFood]=useState(null); // dbId of food being edited
+  const[editFoodData,setEditFoodData]=useState({});
 
   const sortAlpha=(arr)=>[...arr].sort((a,b)=>a.name.toLowerCase().localeCompare(b.name.toLowerCase(),"it"));
 
@@ -364,6 +366,25 @@ function MealPlan({C,inp,sb,user,mealPlanOn,setMealPlanOn,mealPlanOnId,setMealPl
     showToast("Alimento eliminato");
   }
 
+  async function updateMyFood(){
+    if(!editingFood||!editFoodData.name||!editFoodData.cal)return;
+    const{error}=await sb.from("athlete_foods").update({
+      name:editFoodData.name,brand:editFoodData.brand||"",
+      cal:+editFoodData.cal,prot:+editFoodData.prot||0,
+      carb:+editFoodData.carb||0,fat:+editFoodData.fat||0
+    }).eq("id",editingFood).eq("user_id",user.id);
+    if(!error){
+      setMyFoods(p=>sortAlpha(p.map(f=>f.dbId===editingFood?{
+        ...f,name:editFoodData.name,brand:editFoodData.brand||"",
+        cal:+editFoodData.cal,prot:+editFoodData.prot||0,
+        carb:+editFoodData.carb||0,fat:+editFoodData.fat||0,
+        per100:{cal:+editFoodData.cal,prot:+editFoodData.prot||0,carb:+editFoodData.carb||0,fat:+editFoodData.fat||0}
+      }:f)));
+      showToast("Alimento aggiornato");
+    }
+    setEditingFood(null);setEditFoodData({});
+  }
+
   async function saveMealPlan(){
     setSaving(true);
     if(planId){
@@ -534,20 +555,52 @@ function MealPlan({C,inp,sb,user,mealPlanOn,setMealPlanOn,mealPlanOnId,setMealPl
                       ):(
                         <div style={{background:C.bg2,border:`1px solid ${C.border}`,borderRadius:14,overflow:"hidden",maxHeight:360,overflowY:"auto",marginBottom:10}}>
                           {list.map((f,fi)=>(
-                            <div key={fi} style={{padding:"12px 16px",borderBottom:fi<list.length-1?`1px solid ${C.border}`:"none",display:"flex",justifyContent:"space-between",alignItems:"center",gap:10}}>
-                              <div onClick={()=>addFood(f,mealIdx,100)} style={{flex:1,cursor:"pointer",minWidth:0}}>
-                                <div style={{fontSize:13,fontWeight:600,color:C.text,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{f.name}</div>
-                                {f.brand&&<div style={{fontSize:11,color:C.muted,marginBottom:3}}>{f.brand}</div>}
-                                <div style={{display:"flex",gap:10,marginTop:3}}>
-                                  <span style={{fontSize:12,color:C.blue,fontWeight:600}}>{f.cal} kcal</span>
-                                  <span style={{fontSize:11,color:C.green}}>P {f.prot}g</span>
-                                  <span style={{fontSize:11,color:C.orange}}>C {f.carb}g</span>
-                                  <span style={{fontSize:11,color:C.purple}}>G {f.fat}g</span>
-                                  <span style={{fontSize:11,color:C.muted}}>per 100g</span>
+                            <div key={fi} style={{borderBottom:fi<list.length-1?`1px solid ${C.border}`:"none"}}>
+                              {editingFood===f.dbId?(
+                                <div style={{padding:"12px 16px"}}>
+                                  <div style={{fontSize:12,fontWeight:600,color:C.text,marginBottom:10}}>Modifica alimento</div>
+                                  <div style={{display:"flex",flexDirection:"column",gap:8}}>
+                                    <input value={editFoodData.name||""} onChange={e=>setEditFoodData(p=>({...p,name:e.target.value}))} placeholder="Nome" style={{...inp,fontSize:13}}/>
+                                    <input value={editFoodData.brand||""} onChange={e=>setEditFoodData(p=>({...p,brand:e.target.value}))} placeholder="Marca" style={{...inp,fontSize:13}}/>
+                                    <div style={{display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:8}}>
+                                      {[["cal","kcal"],["prot","g"],["carb","g"],["fat","g"]].map(([k,u])=>(
+                                        <div key={k} style={{position:"relative"}}>
+                                          <input type="number" value={editFoodData[k]||""} onChange={e=>setEditFoodData(p=>({...p,[k]:e.target.value}))}
+                                            placeholder={k==="cal"?"Calorie":k==="prot"?"Proteine":k==="carb"?"Carboidrati":"Grassi"}
+                                            style={{...inp,fontSize:13,paddingRight:28}}/>
+                                          <span style={{position:"absolute",right:8,top:"50%",transform:"translateY(-50%)",fontSize:10,color:C.muted}}>{u}</span>
+                                        </div>
+                                      ))}
+                                    </div>
+                                    <div style={{display:"flex",gap:8}}>
+                                      <button onClick={()=>{setEditingFood(null);setEditFoodData({});}}
+                                        style={{flex:1,padding:9,background:C.bg3,border:`1px solid ${C.border}`,borderRadius:10,color:C.sub,fontSize:13,cursor:"pointer",fontFamily:C.f}}>Annulla</button>
+                                      <button onClick={updateMyFood}
+                                        style={{flex:2,padding:9,background:C.blue,border:"none",borderRadius:10,color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:C.f}}>Salva modifiche</button>
+                                    </div>
+                                  </div>
                                 </div>
-                              </div>
-                              {searchTab==="miei"&&(
-                                <button onClick={()=>deleteMyFood(f.dbId)} style={{background:"none",border:"none",color:C.muted,fontSize:18,cursor:"pointer",flexShrink:0}}>×</button>
+                              ):(
+                                <div style={{padding:"12px 16px",display:"flex",justifyContent:"space-between",alignItems:"center",gap:10}}>
+                                  <div onClick={()=>addFood(f,mealIdx,100)} style={{flex:1,cursor:"pointer",minWidth:0}}>
+                                    <div style={{fontSize:13,fontWeight:600,color:C.text,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{f.name}</div>
+                                    {f.brand&&<div style={{fontSize:11,color:C.muted,marginBottom:3}}>{f.brand}</div>}
+                                    <div style={{display:"flex",gap:10,marginTop:3}}>
+                                      <span style={{fontSize:12,color:C.blue,fontWeight:600}}>{f.cal} kcal</span>
+                                      <span style={{fontSize:11,color:C.green}}>P {f.prot}g</span>
+                                      <span style={{fontSize:11,color:C.orange}}>C {f.carb}g</span>
+                                      <span style={{fontSize:11,color:C.purple}}>G {f.fat}g</span>
+                                      <span style={{fontSize:11,color:C.muted}}>per 100g</span>
+                                    </div>
+                                  </div>
+                                  {searchTab==="miei"&&(
+                                    <div style={{display:"flex",gap:4",flexShrink:0}}>
+                                      <button onClick={()=>{setEditingFood(f.dbId);setEditFoodData({name:f.name,brand:f.brand||"",cal:f.cal,prot:f.prot,carb:f.carb,fat:f.fat});}}
+                                        style={{background:"none",border:"none",color:C.blue,fontSize:14,cursor:"pointer",padding:"4px"}}>✎</button>
+                                      <button onClick={()=>deleteMyFood(f.dbId)} style={{background:"none",border:"none",color:C.muted,fontSize:18,cursor:"pointer",padding:"4px"}}>×</button>
+                                    </div>
+                                  )}
+                                </div>
                               )}
                             </div>
                           ))}
