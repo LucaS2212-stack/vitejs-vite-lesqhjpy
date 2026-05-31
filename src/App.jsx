@@ -1149,6 +1149,10 @@ export default function App(){
               })()}
             </>)}
 
+          </div>
+        </div>
+      </div>
+
       {/* BOTTOM NAV mobile */}
       {(typeof window==="undefined"||window.innerWidth<768)&&(
         <div style={{position:"fixed",bottom:0,left:0,right:0,background:C.navBg,backdropFilter:"blur(24px)",borderTop:`1px solid ${C.border}`,display:"flex",justifyContent:"space-around",padding:"10px 0 22px",zIndex:100}}>
