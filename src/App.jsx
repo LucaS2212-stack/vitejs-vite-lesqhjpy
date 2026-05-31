@@ -202,12 +202,26 @@ function MealPlan({C,inp,sb,user,mealPlanOn,setMealPlanOn,mealPlanOnId,setMealPl
   },{cal:0,prot:0,carb:0,fat:0});
 
   // Load my foods
-  useState(()=>{
+  useEffect(()=>{
     if(!user)return;
     sb.from("athlete_foods").select("*").eq("user_id",user.id).order("name").then(({data})=>{
       if(data)setMyFoods(data.map(f=>({id:`my_${f.id}`,dbId:f.id,name:f.name,brand:f.brand||"",cal:f.cal||0,prot:f.prot||0,carb:f.carb||0,fat:f.fat||0,per100:{cal:f.cal||0,prot:f.prot||0,carb:f.carb||0,fat:f.fat||0},source:"I miei"})));
     });
   },[user]);
+
+  // Autosave when meals change
+  useEffect(()=>{
+    if(!user||!meals||meals.length===0)return;
+    const t=setTimeout(async()=>{
+      if(planId){
+        await sb.from("athlete_meal_plan").update({meals,updated_at:new Date().toISOString()}).eq("id",planId).eq("user_id",user.id);
+      }else{
+        const{data}=await sb.from("athlete_meal_plan").insert({type:dayTab,meals,user_id:user.id}).select().single();
+        if(data)setPlanId(data.id);
+      }
+    },1500);
+    return()=>clearTimeout(t);
+  },[meals]);
 
   async function searchFood(q){
     if(!q.trim())return;
@@ -215,7 +229,18 @@ function MealPlan({C,inp,sb,user,mealPlanOn,setMealPlanOn,mealPlanOnId,setMealPl
     try{
       const res=await fetch("/api/fatsecret",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({query:q})});
       const data=await res.json();
-      setSearchResults(data.results||[]);
+      const raw=data.results||[];
+      const qLower=q.toLowerCase();
+      // Ordina: prima OFF, poi per pertinenza (nome contiene la query esatta)
+      const sorted=[...raw].sort((a,b)=>{
+        const aOFF=a.source==="Open Food Facts"?0:1;
+        const bOFF=b.source==="Open Food Facts"?0:1;
+        if(aOFF!==bOFF)return aOFF-bOFF;
+        const aExact=a.name.toLowerCase().includes(qLower)?0:1;
+        const bExact=b.name.toLowerCase().includes(qLower)?0:1;
+        return aExact-bExact;
+      });
+      setSearchResults(sorted);
     }catch(e){console.error(e);setSearchResults([]);}
     setSearching(false);
   }
@@ -435,24 +460,39 @@ function MealPlan({C,inp,sb,user,mealPlanOn,setMealPlanOn,mealPlanOnId,setMealPl
                     {searchResults.length>0&&(
                       <div style={{background:C.bg2,border:`1px solid ${C.border}`,borderRadius:12,overflow:"hidden",maxHeight:300,overflowY:"auto"}}>
                         {searchResults.map((r,ri)=>(
-                          <div key={ri} onClick={()=>addFood(r,mealIdx,100)}
-                            style={{padding:"10px 14px",borderBottom:ri<searchResults.length-1?`1px solid ${C.border}`:"none",cursor:"pointer"}}>
-                            <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:3}}>
-                              <div style={{flex:1,minWidth:0}}>
-                                <div style={{fontSize:12,fontWeight:500,color:C.text,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{r.name}</div>
-                                <div style={{display:"flex",gap:5,alignItems:"center",marginTop:2}}>
-                                  {r.brand&&<span style={{fontSize:10,color:C.muted}}>{r.brand}</span>}
-                                  <span style={{fontSize:9,background:`${sourceColor(r.source)}14`,color:sourceColor(r.source),borderRadius:4,padding:"1px 5px",fontWeight:500}}>{r.source}</span>
+                          <div key={ri} style={{padding:"10px 14px",borderBottom:ri<searchResults.length-1?`1px solid ${C.border}`:"none",display:"flex",alignItems:"center",gap:8}}>
+                            <div onClick={()=>addFood(r,mealIdx,100)} style={{flex:1,cursor:"pointer",minWidth:0}}>
+                              <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:3}}>
+                                <div style={{flex:1,minWidth:0}}>
+                                  <div style={{fontSize:12,fontWeight:500,color:C.text,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{r.name}</div>
+                                  <div style={{display:"flex",gap:5,alignItems:"center",marginTop:2}}>
+                                    {r.brand&&<span style={{fontSize:10,color:C.muted}}>{r.brand}</span>}
+                                    <span style={{fontSize:9,background:`${sourceColor(r.source)}14`,color:sourceColor(r.source),borderRadius:4,padding:"1px 5px",fontWeight:500}}>{r.source}</span>
+                                  </div>
                                 </div>
+                                <span style={{fontSize:11,color:C.blue,fontWeight:600,flexShrink:0,marginLeft:8}}>{r.cal} kcal</span>
                               </div>
-                              <span style={{fontSize:11,color:C.blue,fontWeight:600,flexShrink:0,marginLeft:8}}>{r.cal} kcal</span>
+                              <div style={{display:"flex",gap:8}}>
+                                <span style={{fontSize:10,color:C.green}}>P {r.prot}g</span>
+                                <span style={{fontSize:10,color:C.orange}}>C {r.carb}g</span>
+                                <span style={{fontSize:10,color:C.purple}}>G {r.fat}g</span>
+                                <span style={{fontSize:10,color:C.muted}}>per 100g</span>
+                              </div>
                             </div>
-                            <div style={{display:"flex",gap:8}}>
-                              <span style={{fontSize:10,color:C.green}}>P {r.prot}g</span>
-                              <span style={{fontSize:10,color:C.orange}}>C {r.carb}g</span>
-                              <span style={{fontSize:10,color:C.purple}}>G {r.fat}g</span>
-                              <span style={{fontSize:10,color:C.muted}}>per 100g</span>
-                            </div>
+                            <button onClick={async(e)=>{
+                              e.stopPropagation();
+                              const already=myFoods.some(f=>f.name===r.name&&f.brand===(r.brand||""));
+                              if(already){showToast("Già nei tuoi alimenti");return;}
+                              const{data}=await sb.from("athlete_foods").insert({name:r.name,brand:r.brand||"",cal:r.cal,prot:r.prot,carb:r.carb,fat:r.fat,user_id:user.id}).select().single();
+                              if(data){
+                                setMyFoods(p=>[...p,{id:`my_${data.id}`,dbId:data.id,name:data.name,brand:data.brand||"",cal:data.cal||0,prot:data.prot||0,carb:data.carb||0,fat:data.fat||0,per100:{cal:data.cal||0,prot:data.prot||0,carb:data.carb||0,fat:data.fat||0},source:"I miei"}]);
+                                showToast("Salvato nei tuoi alimenti ♥");
+                              }
+                            }}
+                              title="Salva nei miei alimenti"
+                              style={{background:"none",border:"none",cursor:"pointer",color:myFoods.some(f=>f.name===r.name)?C.red:C.muted,fontSize:16,flexShrink:0,padding:"4px"}}>
+                              {myFoods.some(f=>f.name===r.name)?"♥":"♡"}
+                            </button>
                           </div>
                         ))}
                       </div>
