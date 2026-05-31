@@ -183,6 +183,7 @@ function MealPlan({C,inp,sb,user,mealPlanOn,setMealPlanOn,mealPlanOnId,setMealPl
   const[addingTo,setAddingTo]=useState(null);
   const[searchTab,setSearchTab]=useState("cerca");
   const[myFoods,setMyFoods]=useState([]);
+  const[recentFoods,setRecentFoods]=useState([]);
   const[showAddFood,setShowAddFood]=useState(false);
   const[newFood,setNewFood]=useState({name:"",brand:"",cal:"",prot:"",carb:"",fat:""});
   const[savingFood,setSavingFood]=useState(false);
@@ -190,6 +191,8 @@ function MealPlan({C,inp,sb,user,mealPlanOn,setMealPlanOn,mealPlanOnId,setMealPl
   const[scannerMsg,setScannerMsg]=useState("");
   const[renamingMeal,setRenamingMeal]=useState(null);
   const[saving,setSaving]=useState(false);
+
+  const sortAlpha=(arr)=>[...arr].sort((a,b)=>a.name.toLowerCase().localeCompare(b.name.toLowerCase(),"it"));
 
   const meals=dayTab==="on"?(mealPlanOn||[]):(mealPlanOff||[]);
   const setMeals=dayTab==="on"?setMealPlanOn:setMealPlanOff;
@@ -204,9 +207,17 @@ function MealPlan({C,inp,sb,user,mealPlanOn,setMealPlanOn,mealPlanOnId,setMealPl
   // Load my foods
   useEffect(()=>{
     if(!user)return;
-    sb.from("athlete_foods").select("*").eq("user_id",user.id).order("name").then(({data})=>{
-      if(data)setMyFoods(data.map(f=>({id:`my_${f.id}`,dbId:f.id,name:f.name,brand:f.brand||"",cal:f.cal||0,prot:f.prot||0,carb:f.carb||0,fat:f.fat||0,per100:{cal:f.cal||0,prot:f.prot||0,carb:f.carb||0,fat:f.fat||0},source:"I miei"})));
+    sb.from("athlete_foods").select("*").eq("user_id",user.id).then(({data})=>{
+      if(data){
+        const mapped=data.map(f=>({id:`my_${f.id}`,dbId:f.id,name:f.name,brand:f.brand||"",cal:f.cal||0,prot:f.prot||0,carb:f.carb||0,fat:f.fat||0,per100:{cal:f.cal||0,prot:f.prot||0,carb:f.carb||0,fat:f.fat||0},source:"I miei"}));
+        setMyFoods(sortAlpha(mapped));
+      }
     });
+    // Load recent from localStorage
+    try{
+      const r=JSON.parse(localStorage.getItem("atk_recent_foods")||"[]");
+      setRecentFoods(sortAlpha(r));
+    }catch{}
   },[user]);
 
   // Autosave when meals change
@@ -304,6 +315,14 @@ function MealPlan({C,inp,sb,user,mealPlanOn,setMealPlanOn,mealPlanOnId,setMealPl
     const ratio=qty/100;
     const item={id:food.id,name:food.name,brand:food.brand,qty,cal:Math.round(food.cal*ratio),prot:Math.round(food.prot*ratio*10)/10,carb:Math.round(food.carb*ratio*10)/10,fat:Math.round(food.fat*ratio*10)/10,per100:{cal:food.cal,prot:food.prot,carb:food.carb,fat:food.fat}};
     setMeals(prev=>{const u=[...(prev||[])];u[mealIdx]={...u[mealIdx],foods:[...(u[mealIdx].foods||[]),item]};return u;});
+    // Save to recent
+    try{
+      const recent=JSON.parse(localStorage.getItem("atk_recent_foods")||"[]");
+      const filtered=recent.filter(r=>r.name!==food.name);
+      const newRecent=[{id:food.id,name:food.name,brand:food.brand||"",cal:food.cal,prot:food.prot,carb:food.carb,fat:food.fat,per100:food.per100,source:food.source||""},  ...filtered].slice(0,20);
+      localStorage.setItem("atk_recent_foods",JSON.stringify(newRecent));
+      setRecentFoods(sortAlpha(newRecent));
+    }catch{}
     setSearch("");setSearchResults([]);setAddingTo(null);setScannerMsg("");
   }
 
@@ -436,11 +455,11 @@ function MealPlan({C,inp,sb,user,mealPlanOn,setMealPlanOn,mealPlanOnId,setMealPl
 
             {addingTo===mealIdx?(
               <div style={{marginTop:12}}>
-                {/* Tab cerca/miei/barcode */}
-                <div style={{display:"flex",background:C.bg3,borderRadius:12,padding:3,gap:2,marginBottom:10}}>
-                  {[["cerca","Cerca"],["miei","I miei"],["barcode","Barcode"]].map(([v,l])=>(
+                {/* Tab cerca/miei/recenti/barcode */}
+                <div style={{display:"flex",background:C.bg3,borderRadius:12,padding:3,gap:2,marginBottom:12}}>
+                  {[["cerca","Cerca"],["miei","I miei"],["recenti","Recenti"],["barcode","Barcode"]].map(([v,l])=>(
                     <button key={v} onClick={()=>{setSearchTab(v);setSearchResults([]);setSearch("");setScannerMsg("");setScannerActive(false);}}
-                      style={{flex:1,padding:"7px 0",border:"none",borderRadius:9,background:searchTab===v?C.bg1:"transparent",color:searchTab===v?C.text:C.sub,fontSize:11,fontWeight:searchTab===v?600:400,cursor:"pointer",fontFamily:C.f,transition:"all 0.15s"}}>
+                      style={{flex:1,padding:"9px 0",border:"none",borderRadius:9,background:searchTab===v?C.bg1:"transparent",color:searchTab===v?C.text:C.sub,fontSize:12,fontWeight:searchTab===v?600:400,cursor:"pointer",fontFamily:C.f,transition:"all 0.15s"}}>
                       {l}
                     </button>
                   ))}
@@ -448,35 +467,35 @@ function MealPlan({C,inp,sb,user,mealPlanOn,setMealPlanOn,mealPlanOnId,setMealPl
 
                 {searchTab==="cerca"&&(
                   <>
-                    <div style={{display:"flex",gap:8,marginBottom:8}}>
+                    <div style={{display:"flex",gap:8,marginBottom:10}}>
                       <input value={search} onChange={e=>setSearch(e.target.value)} onKeyDown={e=>e.key==="Enter"&&searchFood(search)}
-                        placeholder="Es: Fage, riso, pasta barilla…" style={{...inp,flex:1}}/>
-                      <button onClick={()=>searchFood(search)} style={{padding:"0 14px",background:C.blue,border:"none",borderRadius:12,color:"#fff",fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:C.f,flexShrink:0}}>
+                        placeholder="Es: Fage, riso, pasta barilla…" style={{...inp,flex:1,fontSize:14}}/>
+                      <button onClick={()=>searchFood(search)} style={{padding:"0 16px",background:C.blue,border:"none",borderRadius:12,color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:C.f,flexShrink:0}}>
                         {searching?"…":"Cerca"}
                       </button>
                       <button onClick={()=>{setAddingTo(null);setSearch("");setSearchResults([]);}}
-                        style={{padding:"0 12px",background:C.bg3,border:`1px solid ${C.border}`,borderRadius:12,color:C.sub,fontSize:12,cursor:"pointer",fontFamily:C.f}}>✕</button>
+                        style={{padding:"0 12px",background:C.bg3,border:`1px solid ${C.border}`,borderRadius:12,color:C.sub,fontSize:13,cursor:"pointer",fontFamily:C.f}}>✕</button>
                     </div>
                     {searchResults.length>0&&(
-                      <div style={{background:C.bg2,border:`1px solid ${C.border}`,borderRadius:12,overflow:"hidden",maxHeight:300,overflowY:"auto"}}>
+                      <div style={{background:C.bg2,border:`1px solid ${C.border}`,borderRadius:14,overflow:"hidden",maxHeight:360,overflowY:"auto"}}>
                         {searchResults.map((r,ri)=>(
-                          <div key={ri} style={{padding:"10px 14px",borderBottom:ri<searchResults.length-1?`1px solid ${C.border}`:"none",display:"flex",alignItems:"center",gap:8}}>
+                          <div key={ri} style={{padding:"12px 16px",borderBottom:ri<searchResults.length-1?`1px solid ${C.border}`:"none",display:"flex",alignItems:"center",gap:10}}>
                             <div onClick={()=>addFood(r,mealIdx,100)} style={{flex:1,cursor:"pointer",minWidth:0}}>
-                              <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:3}}>
+                              <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:4}}>
                                 <div style={{flex:1,minWidth:0}}>
-                                  <div style={{fontSize:12,fontWeight:500,color:C.text,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{r.name}</div>
-                                  <div style={{display:"flex",gap:5,alignItems:"center",marginTop:2}}>
-                                    {r.brand&&<span style={{fontSize:10,color:C.muted}}>{r.brand}</span>}
-                                    <span style={{fontSize:9,background:`${sourceColor(r.source)}14`,color:sourceColor(r.source),borderRadius:4,padding:"1px 5px",fontWeight:500}}>{r.source}</span>
+                                  <div style={{fontSize:13,fontWeight:600,color:C.text,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{r.name}</div>
+                                  <div style={{display:"flex",gap:5,alignItems:"center",marginTop:3}}>
+                                    {r.brand&&<span style={{fontSize:11,color:C.muted}}>{r.brand}</span>}
+                                    <span style={{fontSize:10,background:`${sourceColor(r.source)}14`,color:sourceColor(r.source),borderRadius:4,padding:"1px 6px",fontWeight:500}}>{r.source}</span>
                                   </div>
                                 </div>
-                                <span style={{fontSize:11,color:C.blue,fontWeight:600,flexShrink:0,marginLeft:8}}>{r.cal} kcal</span>
+                                <span style={{fontSize:13,color:C.blue,fontWeight:700,flexShrink:0,marginLeft:10}}>{r.cal} kcal</span>
                               </div>
-                              <div style={{display:"flex",gap:8}}>
-                                <span style={{fontSize:10,color:C.green}}>P {r.prot}g</span>
-                                <span style={{fontSize:10,color:C.orange}}>C {r.carb}g</span>
-                                <span style={{fontSize:10,color:C.purple}}>G {r.fat}g</span>
-                                <span style={{fontSize:10,color:C.muted}}>per 100g</span>
+                              <div style={{display:"flex",gap:10}}>
+                                <span style={{fontSize:11,color:C.green}}>P {r.prot}g</span>
+                                <span style={{fontSize:11,color:C.orange}}>C {r.carb}g</span>
+                                <span style={{fontSize:11,color:C.purple}}>G {r.fat}g</span>
+                                <span style={{fontSize:11,color:C.muted}}>per 100g</span>
                               </div>
                             </div>
                             <button onClick={async(e)=>{
@@ -485,12 +504,13 @@ function MealPlan({C,inp,sb,user,mealPlanOn,setMealPlanOn,mealPlanOnId,setMealPl
                               if(already){showToast("Già nei tuoi alimenti");return;}
                               const{data}=await sb.from("athlete_foods").insert({name:r.name,brand:r.brand||"",cal:r.cal,prot:r.prot,carb:r.carb,fat:r.fat,user_id:user.id}).select().single();
                               if(data){
-                                setMyFoods(p=>[...p,{id:`my_${data.id}`,dbId:data.id,name:data.name,brand:data.brand||"",cal:data.cal||0,prot:data.prot||0,carb:data.carb||0,fat:data.fat||0,per100:{cal:data.cal||0,prot:data.prot||0,carb:data.carb||0,fat:data.fat||0},source:"I miei"}]);
+                                const nf={id:`my_${data.id}`,dbId:data.id,name:data.name,brand:data.brand||"",cal:data.cal||0,prot:data.prot||0,carb:data.carb||0,fat:data.fat||0,per100:{cal:data.cal||0,prot:data.prot||0,carb:data.carb||0,fat:data.fat||0},source:"I miei"};
+                                setMyFoods(p=>sortAlpha([...p,nf]));
                                 showToast("Salvato nei tuoi alimenti ♥");
                               }
                             }}
                               title="Salva nei miei alimenti"
-                              style={{background:"none",border:"none",cursor:"pointer",color:myFoods.some(f=>f.name===r.name)?C.red:C.muted,fontSize:16,flexShrink:0,padding:"4px"}}>
+                              style={{background:"none",border:"none",cursor:"pointer",color:myFoods.some(f=>f.name===r.name)?C.red:C.muted,fontSize:20,flexShrink:0,padding:"4px"}}>
                               {myFoods.some(f=>f.name===r.name)?"♥":"♡"}
                             </button>
                           </div>
@@ -498,68 +518,75 @@ function MealPlan({C,inp,sb,user,mealPlanOn,setMealPlanOn,mealPlanOnId,setMealPl
                       </div>
                     )}
                     {searchResults.length===0&&!searching&&search&&(
-                      <div style={{fontSize:12,color:C.muted,textAlign:"center",padding:12}}>Nessun risultato</div>
+                      <div style={{fontSize:13,color:C.muted,textAlign:"center",padding:14}}>Nessun risultato</div>
                     )}
                   </>
                 )}
 
-                {searchTab==="miei"&&(
-                  <div>
-                    {myFoods.length===0?(
-                      <div style={{fontSize:12,color:C.muted,textAlign:"center",padding:16}}>Nessun alimento salvato — aggiungine uno sotto</div>
-                    ):(
-                      <div style={{background:C.bg2,border:`1px solid ${C.border}`,borderRadius:12,overflow:"hidden",maxHeight:280,overflowY:"auto",marginBottom:8}}>
-                        {myFoods.map((f,fi)=>(
-                          <div key={fi} style={{padding:"10px 14px",borderBottom:fi<myFoods.length-1?`1px solid ${C.border}`:"none",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                            <div onClick={()=>addFood(f,mealIdx,100)} style={{flex:1,cursor:"pointer"}}>
-                              <div style={{fontSize:12,fontWeight:500,color:C.text}}>{f.name}</div>
-                              {f.brand&&<div style={{fontSize:10,color:C.muted}}>{f.brand}</div>}
-                              <div style={{display:"flex",gap:8,marginTop:3}}>
-                                <span style={{fontSize:10,color:C.blue,fontWeight:600}}>{f.cal} kcal</span>
-                                <span style={{fontSize:10,color:C.green}}>P {f.prot}g</span>
-                                <span style={{fontSize:10,color:C.orange}}>C {f.carb}g</span>
-                                <span style={{fontSize:10,color:C.purple}}>G {f.fat}g</span>
-                                <span style={{fontSize:10,color:C.muted}}>per 100g</span>
+                {(searchTab==="miei"||searchTab==="recenti")&&(()=>{
+                  const list=searchTab==="miei"?myFoods:recentFoods;
+                  return(
+                    <div>
+                      {list.length===0?(
+                        <div style={{fontSize:13,color:C.muted,textAlign:"center",padding:18}}>
+                          {searchTab==="miei"?"Nessun alimento salvato — aggiungi con ♡ dalla ricerca":"Nessun alimento usato di recente"}
+                        </div>
+                      ):(
+                        <div style={{background:C.bg2,border:`1px solid ${C.border}`,borderRadius:14,overflow:"hidden",maxHeight:360,overflowY:"auto",marginBottom:10}}>
+                          {list.map((f,fi)=>(
+                            <div key={fi} style={{padding:"12px 16px",borderBottom:fi<list.length-1?`1px solid ${C.border}`:"none",display:"flex",justifyContent:"space-between",alignItems:"center",gap:10}}>
+                              <div onClick={()=>addFood(f,mealIdx,100)} style={{flex:1,cursor:"pointer",minWidth:0}}>
+                                <div style={{fontSize:13,fontWeight:600,color:C.text,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{f.name}</div>
+                                {f.brand&&<div style={{fontSize:11,color:C.muted,marginBottom:3}}>{f.brand}</div>}
+                                <div style={{display:"flex",gap:10,marginTop:3}}>
+                                  <span style={{fontSize:12,color:C.blue,fontWeight:600}}>{f.cal} kcal</span>
+                                  <span style={{fontSize:11,color:C.green}}>P {f.prot}g</span>
+                                  <span style={{fontSize:11,color:C.orange}}>C {f.carb}g</span>
+                                  <span style={{fontSize:11,color:C.purple}}>G {f.fat}g</span>
+                                  <span style={{fontSize:11,color:C.muted}}>per 100g</span>
+                                </div>
                               </div>
+                              {searchTab==="miei"&&(
+                                <button onClick={()=>deleteMyFood(f.dbId)} style={{background:"none",border:"none",color:C.muted,fontSize:18,cursor:"pointer",flexShrink:0}}>×</button>
+                              )}
                             </div>
-                            <button onClick={()=>deleteMyFood(f.dbId)} style={{background:"none",border:"none",color:C.muted,fontSize:16,cursor:"pointer",marginLeft:8}}>×</button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                    {!showAddFood?(
-                      <button onClick={()=>setShowAddFood(true)}
-                        style={{width:"100%",padding:"8px 0",background:`${C.purple}10`,border:`1px dashed ${C.purple}40`,borderRadius:10,color:C.purple,fontSize:12,fontWeight:500,cursor:"pointer",fontFamily:C.f}}>
-                        + Nuovo alimento
-                      </button>
-                    ):(
-                      <div style={{background:C.bg2,border:`1px solid ${C.border}`,borderRadius:12,padding:14}}>
-                        <div style={{fontSize:12,fontWeight:600,color:C.text,marginBottom:10}}>Nuovo alimento</div>
-                        <div style={{display:"flex",flexDirection:"column",gap:8}}>
-                          <input placeholder="Nome *" value={newFood.name} onChange={e=>setNewFood(p=>({...p,name:e.target.value}))} style={{...inp,fontSize:12,padding:"8px 10px"}}/>
-                          <input placeholder="Marca (opzionale)" value={newFood.brand} onChange={e=>setNewFood(p=>({...p,brand:e.target.value}))} style={{...inp,fontSize:12,padding:"8px 10px"}}/>
-                          <div style={{display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:8}}>
-                            {[["Calorie *","cal","kcal"],["Proteine","prot","g"],["Carboidrati","carb","g"],["Grassi","fat","g"]].map(([l,k,u])=>(
-                              <div key={k} style={{position:"relative"}}>
-                                <input type="number" placeholder={l} value={newFood[k]} onChange={e=>setNewFood(p=>({...p,[k]:e.target.value}))}
-                                  style={{...inp,fontSize:12,padding:"8px 30px 8px 10px"}}/>
-                                <span style={{position:"absolute",right:8,top:"50%",transform:"translateY(-50%)",fontSize:10,color:C.muted}}>{u}</span>
-                              </div>
-                            ))}
-                          </div>
-                          <div style={{display:"flex",gap:8}}>
-                            <button onClick={()=>{setShowAddFood(false);setNewFood({name:"",brand:"",cal:"",prot:"",carb:"",fat:""});}}
-                              style={{flex:1,padding:8,background:C.bg3,border:`1px solid ${C.border}`,borderRadius:8,color:C.sub,fontSize:12,cursor:"pointer",fontFamily:C.f}}>Annulla</button>
-                            <button onClick={saveMyFood} disabled={savingFood||!newFood.name||!newFood.cal}
-                              style={{flex:2,padding:8,background:C.purple,border:"none",borderRadius:8,color:"#fff",fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:C.f,opacity:savingFood?0.7:1}}>
-                              {savingFood?"…":"Salva"}
-                            </button>
+                          ))}
+                        </div>
+                      )}
+                      {searchTab==="miei"&&(!showAddFood?(
+                        <button onClick={()=>setShowAddFood(true)}
+                          style={{width:"100%",padding:"10px 0",background:`${C.purple}10`,border:`1px dashed ${C.purple}40`,borderRadius:12,color:C.purple,fontSize:13,fontWeight:500,cursor:"pointer",fontFamily:C.f}}>
+                          + Nuovo alimento
+                        </button>
+                      ):(
+                        <div style={{background:C.bg2,border:`1px solid ${C.border}`,borderRadius:14,padding:16}}>
+                          <div style={{fontSize:13,fontWeight:600,color:C.text,marginBottom:12}}>Nuovo alimento</div>
+                          <div style={{display:"flex",flexDirection:"column",gap:10}}>
+                            <input placeholder="Nome *" value={newFood.name} onChange={e=>setNewFood(p=>({...p,name:e.target.value}))} style={{...inp,fontSize:13}}/>
+                            <input placeholder="Marca (opzionale)" value={newFood.brand} onChange={e=>setNewFood(p=>({...p,brand:e.target.value}))} style={{...inp,fontSize:13}}/>
+                            <div style={{display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:10}}>
+                              {[["Calorie *","cal","kcal"],["Proteine","prot","g"],["Carboidrati","carb","g"],["Grassi","fat","g"]].map(([l,k,u])=>(
+                                <div key={k} style={{position:"relative"}}>
+                                  <input type="number" placeholder={l} value={newFood[k]} onChange={e=>setNewFood(p=>({...p,[k]:e.target.value}))}
+                                    style={{...inp,fontSize:13,paddingRight:32}}/>
+                                  <span style={{position:"absolute",right:10,top:"50%",transform:"translateY(-50%)",fontSize:11,color:C.muted}}>{u}</span>
+                                </div>
+                              ))}
+                            </div>
+                            <div style={{display:"flex",gap:10}}>
+                              <button onClick={()=>{setShowAddFood(false);setNewFood({name:"",brand:"",cal:"",prot:"",carb:"",fat:"",});}}
+                                style={{flex:1,padding:10,background:C.bg3,border:`1px solid ${C.border}`,borderRadius:10,color:C.sub,fontSize:13,cursor:"pointer",fontFamily:C.f}}>Annulla</button>
+                              <button onClick={saveMyFood} disabled={savingFood||!newFood.name||!newFood.cal}
+                                style={{flex:2,padding:10,background:C.purple,border:"none",borderRadius:10,color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:C.f,opacity:savingFood?0.7:1}}>
+                                {savingFood?"…":"Salva"}
+                              </button>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    )}
-                  </div>
-                )}
+                      ))}
+                    </div>
+                  );
+                })()}
 
                 {searchTab==="barcode"&&(
                   <div>
