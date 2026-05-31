@@ -199,21 +199,35 @@ function MealPlan({C,inp,sb,user,mealPlanOn,setMealPlanOn,mealPlanOnId,setMealPl
     if(!q.trim())return;
     setSearching(true);
     try{
-      // USDA FoodData Central
-      const res=await fetch(`https://api.nal.usda.gov/fdc/v1/foods/search?query=${encodeURIComponent(q)}&pageSize=8&api_key=DEMO_KEY`);
+      const res=await fetch("/api/fatsecret",{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({query:q})
+      });
       const data=await res.json();
-      const results=(data.foods||[]).map(f=>({
-        id:f.fdcId,
-        name:f.description,
-        brand:f.brandOwner||f.brandName||"",
-        cal:Math.round(f.foodNutrients?.find(n=>n.nutrientId===1008)?.value||0),
-        prot:Math.round((f.foodNutrients?.find(n=>n.nutrientId===1003)?.value||0)*10)/10,
-        carb:Math.round((f.foodNutrients?.find(n=>n.nutrientId===1005)?.value||0)*10)/10,
-        fat:Math.round((f.foodNutrients?.find(n=>n.nutrientId===1004)?.value||0)*10)/10,
-        per100:true,
-      }));
+      const foods=data?.foods?.food||[];
+      const arr=Array.isArray(foods)?foods:[foods];
+      const results=arr.slice(0,10).map(f=>{
+        const desc=f.food_description||"";
+        const cal=parseFloat(desc.match(/Calories:\s*([\d.]+)/)?.[1]||0);
+        const fat=parseFloat(desc.match(/Fat:\s*([\d.]+)/)?.[1]||0);
+        const carb=parseFloat(desc.match(/Carbs:\s*([\d.]+)/)?.[1]||0);
+        const prot=parseFloat(desc.match(/Protein:\s*([\d.]+)/)?.[1]||0);
+        return{
+          id:f.food_id,
+          name:f.food_name,
+          brand:f.brand_name||"",
+          type:f.food_type||"",
+          cal:Math.round(cal),
+          prot:Math.round(prot*10)/10,
+          carb:Math.round(carb*10)/10,
+          fat:Math.round(fat*10)/10,
+          per100:{cal:Math.round(cal),prot:Math.round(prot*10)/10,carb:Math.round(carb*10)/10,fat:Math.round(fat*10)/10},
+          desc,
+        };
+      });
       setSearchResults(results);
-    }catch{setSearchResults([]);}
+    }catch(e){console.error(e);setSearchResults([]);}
     setSearching(false);
   }
 
@@ -377,19 +391,35 @@ function MealPlan({C,inp,sb,user,mealPlanOn,setMealPlanOn,mealPlanOnId,setMealPl
                   <div style={{background:C.bg2,border:`1px solid ${C.border}`,borderRadius:12,overflow:"hidden"}}>
                     {searchResults.map((r,ri)=>(
                       <div key={ri} onClick={()=>addFood(r,mealIdx,100)}
-                        style={{padding:"10px 14px",borderBottom:ri<searchResults.length-1?`1px solid ${C.border}`:"none",cursor:"pointer",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                        <div style={{flex:1,minWidth:0}}>
-                          <div style={{fontSize:12,fontWeight:500,color:C.text,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{r.name}</div>
-                          {r.brand&&<div style={{fontSize:10,color:C.muted}}>{r.brand}</div>}
+                        style={{padding:"10px 14px",borderBottom:ri<searchResults.length-1?`1px solid ${C.border}`:"none",cursor:"pointer"}}>
+                        <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:4}}>
+                          <div style={{flex:1,minWidth:0}}>
+                            <div style={{fontSize:12,fontWeight:500,color:C.text,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{r.name}</div>
+                            {r.brand&&<div style={{fontSize:10,color:C.muted}}>{r.brand}</div>}
+                          </div>
+                          <div style={{fontSize:11,color:C.blue,flexShrink:0,marginLeft:8,fontWeight:600}}>{r.cal} kcal</div>
                         </div>
-                        <div style={{fontSize:11,color:C.blue,flexShrink:0,marginLeft:8}}>{r.cal} kcal/100g</div>
+                        <div style={{display:"flex",gap:8}}>
+                          <span style={{fontSize:10,color:C.green}}>P {r.prot}g</span>
+                          <span style={{fontSize:10,color:C.orange}}>C {r.carb}g</span>
+                          <span style={{fontSize:10,color:C.purple}}>G {r.fat}g</span>
+                          <span style={{fontSize:10,color:C.muted}}>per 100g</span>
+                        </div>
                       </div>
                     ))}
                   </div>
                 )}
                 {searchResults.length===0&&!searching&&search&&(
-                  <div style={{fontSize:12,color:C.muted,textAlign:"center",padding:12}}>Nessun risultato — prova in inglese</div>
+                  <div style={{fontSize:12,color:C.muted,textAlign:"center",padding:12}}>Nessun risultato trovato</div>
                 )}
+                {/* FatSecret Attribution */}
+                <div style={{marginTop:8,textAlign:"center"}}>
+                  <a href="https://platform.fatsecret.com" target="_blank" rel="noopener noreferrer">
+                    <img alt="Nutrition information provided by fatsecret Platform API"
+                      src="https://platform.fatsecret.com/api/static/images/powered_by_fatsecret_horizontal_brand.svg"
+                      style={{height:16,opacity:0.6}}/>
+                  </a>
+                </div>
               </div>
             ):(
               <button onClick={()=>setAddingTo(mealIdx)}
@@ -564,7 +594,11 @@ export default function App(){
         if(dr.data){const map={};dr.data.forEach(r=>{map[r.date]={type:r.type,calories:r.calories,protein:r.protein,carbs:r.carbs,fat:r.fat,steps:r.steps,note:r.note,isEstimate:r.is_estimate};});setDays(map);}
         if(wr.data)setWeightLog(wr.data.map(r=>({date:r.date,weight:r.weight,note:r.note})));
         if(pr.data&&pr.data.length){
-          setPlanHistory(pr.data.map(r=>({date:r.date,onCal:r.on_cal,onP:r.on_p,onC:r.on_c,onF:r.on_f,offCal:r.off_cal,offP:r.off_p,offC:r.off_c,offF:r.off_f})));
+          const sorted=[...pr.data].sort((a,b)=>a.date.localeCompare(b.date));
+          setPlanHistory(sorted.map(r=>({date:r.date,onCal:r.on_cal,onP:r.on_p,onC:r.on_c,onF:r.on_f,offCal:r.off_cal,offP:r.off_p,offC:r.off_c,offF:r.off_f})));
+          // Aggiorna il piano attivo con l'ultimo valore da Supabase
+          const last=sorted[sorted.length-1];
+          setPlan({onCal:last.on_cal,onP:last.on_p,onC:last.on_c,onF:last.on_f,offCal:last.off_cal,offP:last.off_p,offC:last.off_c,offF:last.off_f});
         }else{
           const init={date:"2020-01-01",...DEFAULT_PLAN};
           setPlanHistory([init]);
