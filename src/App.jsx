@@ -594,7 +594,7 @@ function MealPlan({C,inp,sb,user,mealPlanOn,setMealPlanOn,mealPlanOnId,setMealPl
                                     </div>
                                   </div>
                                   {searchTab==="miei"&&(
-                                    <div style={{display:"flex",gap:4",flexShrink:0}}>
+                                    <div style={{display:"flex",gap:4,flexShrink:0}}>
                                       <button onClick={()=>{setEditingFood(f.dbId);setEditFoodData({name:f.name,brand:f.brand||"",cal:f.cal,prot:f.prot,carb:f.carb,fat:f.fat});}}
                                         style={{background:"none",border:"none",color:C.blue,fontSize:14,cursor:"pointer",padding:"4px"}}>✎</button>
                                       <button onClick={()=>deleteMyFood(f.dbId)} style={{background:"none",border:"none",color:C.muted,fontSize:18,cursor:"pointer",padding:"4px"}}>×</button>
