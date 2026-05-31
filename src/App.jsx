@@ -173,6 +173,251 @@ function AuthScreen({C}){
   );
 }
 
+// ─── MEAL PLAN ────────────────────────────────────────────────────────────────
+function MealPlan({C,inp,sb,user,mealPlanOn,setMealPlanOn,mealPlanOnId,setMealPlanOnId,mealPlanOff,setMealPlanOff,mealPlanOffId,setMealPlanOffId,showToast,todayType,today}){
+  const[dayTab,setDayTab]=useState("on");
+  const[search,setSearch]=useState("");
+  const[searchResults,setSearchResults]=useState([]);
+  const[searching,setSearching]=useState(false);
+  const[addingTo,setAddingTo]=useState(null); // {mealIdx}
+  const[editQty,setEditQty]=useState({}); // {mealIdx_foodIdx: qty}
+
+  const meals=dayTab==="on"?(mealPlanOn||[]):(mealPlanOff||[]);
+  const setMeals=dayTab==="on"?setMealPlanOn:setMealPlanOff;
+  const planId=dayTab==="on"?mealPlanOnId:mealPlanOffId;
+  const setPlanId=dayTab==="on"?setMealPlanOnId:setMealPlanOffId;
+
+  // Totali giornata
+  const dayTotals=meals.reduce((acc,meal)=>{
+    meal.foods?.forEach(f=>{
+      acc.cal+=(f.cal||0);acc.prot+=(f.prot||0);acc.carb+=(f.carb||0);acc.fat+=(f.fat||0);
+    });
+    return acc;
+  },{cal:0,prot:0,carb:0,fat:0});
+
+  async function searchFood(q){
+    if(!q.trim())return;
+    setSearching(true);
+    try{
+      // USDA FoodData Central
+      const res=await fetch(`https://api.nal.usda.gov/fdc/v1/foods/search?query=${encodeURIComponent(q)}&pageSize=8&api_key=DEMO_KEY`);
+      const data=await res.json();
+      const results=(data.foods||[]).map(f=>({
+        id:f.fdcId,
+        name:f.description,
+        brand:f.brandOwner||f.brandName||"",
+        cal:Math.round(f.foodNutrients?.find(n=>n.nutrientId===1008)?.value||0),
+        prot:Math.round((f.foodNutrients?.find(n=>n.nutrientId===1003)?.value||0)*10)/10,
+        carb:Math.round((f.foodNutrients?.find(n=>n.nutrientId===1005)?.value||0)*10)/10,
+        fat:Math.round((f.foodNutrients?.find(n=>n.nutrientId===1004)?.value||0)*10)/10,
+        per100:true,
+      }));
+      setSearchResults(results);
+    }catch{setSearchResults([]);}
+    setSearching(false);
+  }
+
+  function addFood(food,mealIdx,qty=100){
+    const ratio=qty/100;
+    const item={
+      id:food.id,name:food.name,brand:food.brand,qty,
+      cal:Math.round(food.cal*ratio),
+      prot:Math.round(food.prot*ratio*10)/10,
+      carb:Math.round(food.carb*ratio*10)/10,
+      fat:Math.round(food.fat*ratio*10)/10,
+      per100:{cal:food.cal,prot:food.prot,carb:food.carb,fat:food.fat},
+    };
+    setMeals(prev=>{
+      const updated=[...(prev||[])];
+      updated[mealIdx]={...updated[mealIdx],foods:[...(updated[mealIdx].foods||[]),item]};
+      return updated;
+    });
+    setSearch("");setSearchResults([]);setAddingTo(null);
+  }
+
+  function removeFood(mealIdx,foodIdx){
+    setMeals(prev=>{
+      const updated=[...(prev||[])];
+      updated[mealIdx]={...updated[mealIdx],foods:updated[mealIdx].foods.filter((_,i)=>i!==foodIdx)};
+      return updated;
+    });
+  }
+
+  function updateQty(mealIdx,foodIdx,qty){
+    setMeals(prev=>{
+      const updated=[...(prev||[])];
+      const food=updated[mealIdx].foods[foodIdx];
+      const ratio=qty/100;
+      updated[mealIdx].foods[foodIdx]={...food,qty,
+        cal:Math.round(food.per100.cal*ratio),
+        prot:Math.round(food.per100.prot*ratio*10)/10,
+        carb:Math.round(food.per100.carb*ratio*10)/10,
+        fat:Math.round(food.per100.fat*ratio*10)/10,
+      };
+      return updated;
+    });
+  }
+
+  function addMeal(){
+    setMeals(prev=>[...(prev||[]),{name:`Pasto ${(prev||[]).length+1}`,foods:[]}]);
+  }
+
+  function removeMeal(idx){
+    setMeals(prev=>prev.filter((_,i)=>i!==idx));
+  }
+
+  function updateMealName(idx,name){
+    setMeals(prev=>{const u=[...prev];u[idx]={...u[idx],name};return u;});
+  }
+
+  async function saveMealPlan(){
+    setSaving(true);
+    const type=dayTab;
+    if(planId){
+      await sb.from("athlete_meal_plan").update({meals,updated_at:new Date().toISOString()}).eq("id",planId).eq("user_id",user.id);
+    }else{
+      const{data}=await sb.from("athlete_meal_plan").insert({type,meals,user_id:user.id}).select().single();
+      if(data)setPlanId(data.id);
+    }
+    setSaving(false);
+    showToast("Meal plan salvato");
+  }
+
+  const[saving,setSaving]=useState(false);
+
+  const macroColor={cal:C.blue,prot:C.green,carb:C.orange,fat:C.purple};
+
+  return(
+    <>
+      {/* Selector ON/OFF */}
+      <Seg C={C} options={[{value:"on",label:`Giorno ON`},{value:"off",label:`Giorno OFF`}]} value={dayTab} onChange={setDayTab}/>
+
+      {/* Totali giornata */}
+      {meals.length>0&&(
+        <div style={{background:C.bg1,border:`1px solid ${C.borderHi}`,borderRadius:20,padding:16}}>
+          <div style={{fontSize:12,color:C.sub,marginBottom:10,fontWeight:500}}>Totale giornata</div>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8}}>
+            {[["Kcal",dayTotals.cal,C.blue],["Prot",dayTotals.prot+"g",C.green],["Carb",dayTotals.carb+"g",C.orange],["Gras",dayTotals.fat+"g",C.purple]].map(([l,v,color])=>(
+              <div key={l} style={{textAlign:"center"}}>
+                <div style={{fontSize:16,fontWeight:700,color}}>{v}</div>
+                <div style={{fontSize:10,color:C.muted,marginTop:2}}>{l}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Pasti */}
+      {meals.map((meal,mealIdx)=>{
+        const mealTotals=meal.foods?.reduce((a,f)=>({cal:a.cal+(f.cal||0),prot:a.prot+(f.prot||0),carb:a.carb+(f.carb||0),fat:a.fat+(f.fat||0)}),{cal:0,prot:0,carb:0,fat:0})||{cal:0,prot:0,carb:0,fat:0};
+        return(
+          <Card key={mealIdx} C={C}>
+            {/* Header pasto */}
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
+              <input value={meal.name} onChange={e=>updateMealName(mealIdx,e.target.value)}
+                style={{background:"none",border:"none",color:C.text,fontSize:14,fontWeight:700,outline:"none",fontFamily:C.f,flex:1}}/>
+              <button onClick={()=>removeMeal(mealIdx)} style={{background:"none",border:"none",color:C.muted,fontSize:18,cursor:"pointer",lineHeight:1}}>×</button>
+            </div>
+
+            {/* Alimenti */}
+            {meal.foods?.map((food,foodIdx)=>(
+              <div key={foodIdx} style={{padding:"10px 0",borderBottom:`1px solid ${C.border}`}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:6}}>
+                  <div style={{flex:1,minWidth:0}}>
+                    <div style={{fontSize:13,fontWeight:500,color:C.text,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{food.name}</div>
+                    {food.brand&&<div style={{fontSize:10,color:C.muted}}>{food.brand}</div>}
+                  </div>
+                  <button onClick={()=>removeFood(mealIdx,foodIdx)} style={{background:"none",border:"none",color:C.muted,fontSize:16,cursor:"pointer",marginLeft:8,flexShrink:0}}>×</button>
+                </div>
+                <div style={{display:"flex",alignItems:"center",gap:10}}>
+                  <div style={{display:"flex",alignItems:"center",gap:4}}>
+                    <input type="number" defaultValue={food.qty}
+                      onBlur={e=>updateQty(mealIdx,foodIdx,+e.target.value||100)}
+                      style={{...inp,width:70,padding:"5px 8px",fontSize:12,textAlign:"center"}}/>
+                    <span style={{fontSize:11,color:C.muted}}>g</span>
+                  </div>
+                  <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+                    <span style={{fontSize:11,color:C.blue,fontWeight:500}}>{food.cal} kcal</span>
+                    <span style={{fontSize:11,color:C.green}}>P {food.prot}g</span>
+                    <span style={{fontSize:11,color:C.orange}}>C {food.carb}g</span>
+                    <span style={{fontSize:11,color:C.purple}}>G {food.fat}g</span>
+                  </div>
+                </div>
+              </div>
+            ))}
+
+            {/* Totale pasto */}
+            {(meal.foods?.length||0)>0&&(
+              <div style={{display:"flex",gap:10,marginTop:10,padding:"8px 10px",background:C.bg2,borderRadius:10}}>
+                <span style={{fontSize:11,color:C.muted,fontWeight:500}}>Tot:</span>
+                <span style={{fontSize:11,color:C.blue,fontWeight:600}}>{mealTotals.cal} kcal</span>
+                <span style={{fontSize:11,color:C.green}}>P {mealTotals.prot}g</span>
+                <span style={{fontSize:11,color:C.orange}}>C {mealTotals.carb}g</span>
+                <span style={{fontSize:11,color:C.purple}}>G {mealTotals.fat}g</span>
+              </div>
+            )}
+
+            {/* Cerca alimento */}
+            {addingTo===mealIdx?(
+              <div style={{marginTop:12}}>
+                <div style={{display:"flex",gap:8,marginBottom:8}}>
+                  <input value={search} onChange={e=>setSearch(e.target.value)}
+                    onKeyDown={e=>e.key==="Enter"&&searchFood(search)}
+                    placeholder="Cerca alimento… (es: chicken breast)" style={{...inp,flex:1}}/>
+                  <button onClick={()=>searchFood(search)}
+                    style={{padding:"0 14px",background:C.blue,border:"none",borderRadius:12,color:"#fff",fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:C.f,flexShrink:0}}>
+                    {searching?"…":"Cerca"}
+                  </button>
+                  <button onClick={()=>{setAddingTo(null);setSearch("");setSearchResults([]);}}
+                    style={{padding:"0 12px",background:C.bg3,border:`1px solid ${C.border}`,borderRadius:12,color:C.sub,fontSize:12,cursor:"pointer",fontFamily:C.f}}>
+                    ✕
+                  </button>
+                </div>
+                {searchResults.length>0&&(
+                  <div style={{background:C.bg2,border:`1px solid ${C.border}`,borderRadius:12,overflow:"hidden"}}>
+                    {searchResults.map((r,ri)=>(
+                      <div key={ri} onClick={()=>addFood(r,mealIdx,100)}
+                        style={{padding:"10px 14px",borderBottom:ri<searchResults.length-1?`1px solid ${C.border}`:"none",cursor:"pointer",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                        <div style={{flex:1,minWidth:0}}>
+                          <div style={{fontSize:12,fontWeight:500,color:C.text,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{r.name}</div>
+                          {r.brand&&<div style={{fontSize:10,color:C.muted}}>{r.brand}</div>}
+                        </div>
+                        <div style={{fontSize:11,color:C.blue,flexShrink:0,marginLeft:8}}>{r.cal} kcal/100g</div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {searchResults.length===0&&!searching&&search&&(
+                  <div style={{fontSize:12,color:C.muted,textAlign:"center",padding:12}}>Nessun risultato — prova in inglese</div>
+                )}
+              </div>
+            ):(
+              <button onClick={()=>setAddingTo(mealIdx)}
+                style={{marginTop:12,width:"100%",padding:"8px 0",background:`${C.blue}10`,border:`1px dashed ${C.blue}40`,borderRadius:10,color:C.blue,fontSize:12,fontWeight:500,cursor:"pointer",fontFamily:C.f}}>
+                + Aggiungi alimento
+              </button>
+            )}
+          </Card>
+        );
+      })}
+
+      {/* Aggiungi pasto */}
+      <button onClick={addMeal}
+        style={{width:"100%",padding:13,background:C.bg1,border:`1.5px dashed ${C.border}`,borderRadius:14,color:C.sub,fontSize:13,fontWeight:500,cursor:"pointer",fontFamily:C.f}}>
+        + Aggiungi pasto
+      </button>
+
+      {/* Salva */}
+      {meals.length>0&&(
+        <button onClick={saveMealPlan} disabled={saving}
+          style={{width:"100%",padding:13,background:`linear-gradient(135deg,${C.blue},${C.indigo})`,border:"none",borderRadius:14,color:"#fff",fontSize:14,fontWeight:600,cursor:"pointer",fontFamily:C.f,opacity:saving?0.7:1,boxShadow:`0 4px 16px ${C.blue}30`}}>
+          {saving?"Salvataggio…":"Salva meal plan"}
+        </button>
+      )}
+    </>
+  );
+}
+
 // ─── PLANNING SETUP ───────────────────────────────────────────────────────────
 function PlanningSetup({C,inp,lastW,plan,todayStr,fmtShort,setPlanning,setPlanningView}){
   const[pName,setPName]=useState("");
@@ -292,6 +537,11 @@ export default function App(){
   const[weekNotes,setWeekNotes]=useState({});
   const[planning,setPlanning]=useState(null);
   const[planningView,setPlanningView]=useState("setup");
+  const[mealPlanOn,setMealPlanOn]=useState(null);
+  const[mealPlanOff,setMealPlanOff]=useState(null);
+  const[dayMeals,setDayMeals]=useState({});
+  const[mealPlanOnId,setMealPlanOnId]=useState(null);
+  const[mealPlanOffId,setMealPlanOffId]=useState(null);
   const[wInput,setWInput]=useState("");
   const[wDate,setWDate]=useState(todayStr());
   const[wNote,setWNote]=useState("");
@@ -304,11 +554,12 @@ export default function App(){
     async function fetchAll(){
       setLoading(true);
       try{
-        const[dr,wr,pr,plr]=await Promise.all([
+        const[dr,wr,pr,plr,mpr]=await Promise.all([
           sb.from("athlete_days").select("*").eq("user_id",user.id),
           sb.from("athlete_weight").select("*").eq("user_id",user.id).order("date"),
           sb.from("athlete_plan_history").select("*").eq("user_id",user.id).order("date"),
           sb.from("athlete_planning").select("*").eq("user_id",user.id).order("created_at",{ascending:false}).limit(1),
+          sb.from("athlete_meal_plan").select("*").eq("user_id",user.id),
         ]);
         if(dr.data){const map={};dr.data.forEach(r=>{map[r.date]={type:r.type,calories:r.calories,protein:r.protein,carbs:r.carbs,fat:r.fat,steps:r.steps,note:r.note,isEstimate:r.is_estimate};});setDays(map);}
         if(wr.data)setWeightLog(wr.data.map(r=>({date:r.date,weight:r.weight,note:r.note})));
@@ -323,6 +574,12 @@ export default function App(){
           const p=plr.data[0];
           setPlanning({id:p.id,name:p.name,type:p.type,startDate:p.start_date,weeks:p.weeks||[]});
           setPlanningView("view");
+        }
+        if(mpr.data){
+          const on=mpr.data.find(m=>m.type==="on");
+          const off=mpr.data.find(m=>m.type==="off");
+          if(on){setMealPlanOn(on.meals||[]);setMealPlanOnId(on.id);}
+          if(off){setMealPlanOff(off.meals||[]);setMealPlanOffId(off.id);}
         }
       }catch(e){console.error(e);}
       setLoading(false);
@@ -472,6 +729,7 @@ export default function App(){
     {id:"peso",label:"Peso",icon:(a)=><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={a?C.blue:C.muted} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>},
     {id:"piano",label:"Piano",icon:(a)=><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={a?C.blue:C.muted} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>},
     {id:"planning",label:"Planning",icon:(a)=><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={a?C.blue:C.muted} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>},
+    {id:"meal",label:"Meal Plan",icon:(a)=><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={a?C.blue:C.muted} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>},
   ];
 
   if(authLoading)return(
@@ -1274,11 +1532,21 @@ export default function App(){
               })()}
             </>)}
 
+            {/* ── MEAL PLAN ── */}
+            {tab==="meal"&&(
+              <MealPlan
+                C={C} inp={inp} sb={sb} user={user}
+                mealPlanOn={mealPlanOn} setMealPlanOn={setMealPlanOn}
+                mealPlanOnId={mealPlanOnId} setMealPlanOnId={setMealPlanOnId}
+                mealPlanOff={mealPlanOff} setMealPlanOff={setMealPlanOff}
+                mealPlanOffId={mealPlanOffId} setMealPlanOffId={setMealPlanOffId}
+                showToast={showToast} todayType={todayType} today={today}
+              />
+            )}
+
           </div>
         </div>
       </div>
-
-      {/* BOTTOM NAV mobile */}
       {(typeof window==="undefined"||window.innerWidth<768)&&(
         <div style={{position:"fixed",bottom:0,left:0,right:0,background:C.navBg,backdropFilter:"blur(24px)",borderTop:`1px solid ${C.border}`,display:"flex",justifyContent:"space-around",padding:"10px 0 22px",zIndex:100}}>
           {NAV.map(n=>{
