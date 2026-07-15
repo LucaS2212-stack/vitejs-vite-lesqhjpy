@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Customized } from "recharts";
 import { createClient } from "@supabase/supabase-js";
 import { Html5Qrcode } from "html5-qrcode";
 
@@ -29,26 +29,48 @@ function getWeekDates(offset=0){
 }
 function avg(arr){const v=arr.filter(x=>x!=null&&!isNaN(x));return v.length?Math.round(v.reduce((a,b)=>a+b,0)/v.length):null;}
 function weekdayIdx(dateStr){const d=new Date(dateStr+"T12:00:00");return(d.getDay()+6)%7;}
+function buildLinePath(data,w,h){
+  const padTop=14,padBottom=6;
+  const min=Math.min(...data),max=Math.max(...data),range=max-min||1;
+  const n=data.length;
+  const coords=data.map((d,i)=>{
+    const x=(i/(n-1))*w;
+    const y=h-padBottom-((d-min)/range)*(h-padTop-padBottom);
+    return[x,y];
+  });
+  const line="M "+coords.map(c=>c[0].toFixed(1)+","+c[1].toFixed(1)).join(" L ");
+  const area=line+` L ${w},${h} L 0,${h} Z`;
+  return{line,area,width:w,height:h};
+}
+function pointPct(data,index,padTop,padBottom){
+  const min=Math.min(...data),max=Math.max(...data),range=max-min||1;
+  const n=data.length;
+  const xPct=(index/(n-1))*100;
+  const yPct=(padTop+(1-(data[index]-min)/range)*(100-padTop-padBottom));
+  return{xPct:xPct.toFixed(1),yPct:yPct.toFixed(1)};
+}
 function getPlanAt(history,date){const s=[...history].sort((a,b)=>a.date.localeCompare(b.date));const a=s.filter(p=>p.date<=date);return a.length?a[a.length-1]:s[0]||null;}
 
 
 const DARK={
-  bg0:"#080810",bg1:"#111120",bg2:"#191928",bg3:"#20202F",bg4:"#2A2A3C",
-  border:"rgba(255,255,255,0.06)",borderHi:"rgba(255,255,255,0.12)",
-  text:"#E8E8F0",sub:"#8080A0",muted:"#404058",
-  blue:"#5B9CF6",indigo:"#8B7FF5",teal:"#2DD4BF",
-  green:"#34D074",orange:"#FFAA2E",red:"#FF5F5F",purple:"#C46EF5",
-  f:"'Inter','Segoe UI',system-ui,sans-serif",
-  shadow:"0 4px 24px rgba(0,0,0,0.35)",
-  navBg:"rgba(8,8,16,0.96)",headerBg:"rgba(8,8,16,0.94)",
+  bg0:"#050506",bg1:"#141416",bg2:"#1B1B1E",bg3:"#232326",bg4:"#2C2C30",
+  glass:"rgba(255,255,255,0.015)",glassBorder:"rgba(255,255,255,0.08)",
+  border:"rgba(255,255,255,0.07)",borderHi:"rgba(255,255,255,0.14)",
+  text:"#EDEDF0",sub:"#8A8A94",muted:"#4A4A52",
+  blue:"#5B9CF6",indigo:"#8B7FF5",teal:"#2DD4BF",pink:"#FF4D8D",
+  green:"#34D074",orange:"#FFAA2E",red:"#FF3B30",purple:"#C46EF5",
+  f:"'Inter','Segoe UI',system-ui,sans-serif",fTight:"'Inter Tight','Inter',system-ui,sans-serif",
+  shadow:"0 4px 24px rgba(0,0,0,0.45)",
+  navBg:"rgba(5,5,6,0.96)",headerBg:"rgba(5,5,6,0.94)",
 };
 const LIGHT={
   bg0:"#F0F0F8",bg1:"#FFFFFF",bg2:"#F5F5FC",bg3:"#EAEAF4",bg4:"#DCDCEC",
+  glass:"rgba(255,255,255,0.6)",glassBorder:"rgba(0,0,0,0.08)",
   border:"rgba(0,0,0,0.07)",borderHi:"rgba(0,0,0,0.14)",
   text:"#18182A",sub:"#60608A",muted:"#B0B0C8",
-  blue:"#3B7EF4",indigo:"#6B5CF5",teal:"#0DADA0",
+  blue:"#3B7EF4",indigo:"#6B5CF5",teal:"#0DADA0",pink:"#E23D77",
   green:"#22C265",orange:"#F59500",red:"#E84040",purple:"#A855D4",
-  f:"'Inter','Segoe UI',system-ui,sans-serif",
+  f:"'Inter','Segoe UI',system-ui,sans-serif",fTight:"'Inter Tight','Inter',system-ui,sans-serif",
   shadow:"0 2px 12px rgba(0,0,0,0.07)",
   navBg:"rgba(240,240,248,0.97)",headerBg:"rgba(240,240,248,0.95)",
 };
@@ -58,14 +80,41 @@ function Card({children,style,onClick,hi,C}){
   const[hov,setHov]=useState(false);
   return(
     <div onClick={onClick} onMouseEnter={()=>onClick&&setHov(true)} onMouseLeave={()=>setHov(false)}
-      style={{background:C.bg1,borderRadius:20,border:`1px solid ${hov&&onClick?C.borderHi:hi?C.borderHi:C.border}`,padding:20,transition:"border-color 0.2s",cursor:onClick?"pointer":"default",boxShadow:C.shadow,...style}}>
+      style={{background:C.glass,backdropFilter:"blur(20px)",WebkitBackdropFilter:"blur(20px)",borderRadius:6,border:`1px solid ${hov&&onClick?C.glassBorder:hi?C.glassBorder:C.border}`,padding:20,transition:"border-color 0.2s",cursor:onClick?"pointer":"default",boxShadow:C.shadow,...style}}>
       {children}
     </div>
   );
 }
+function Kicker({label,color,C}){
+  return(
+    <div style={{display:"inline-flex",alignItems:"center",gap:8,marginBottom:2}}>
+      <span style={{width:7,height:7,background:"#fff",flexShrink:0}}/>
+      <span style={{fontSize:12,fontWeight:700,letterSpacing:0.6,color:color||C.red,fontFamily:C.fTight}}>{label}</span>
+    </div>
+  );
+}
+function FloatingBadge({formattedGraphicalItems,C,unit}){
+  const pts=formattedGraphicalItems?.[0]?.props?.points;
+  if(!pts?.length)return null;
+  const last=pts[pts.length-1];
+  if(last.x==null||last.y==null)return null;
+  const val=last.payload?.Peso??last.payload?.Media??(Array.isArray(last.value)?last.value[1]:last.value);
+  const bw=72,bh=36;
+  let bx=last.x-bw/2;
+  const by=Math.max(4,last.y-bh-16);
+  return(
+    <g pointerEvents="none">
+      <line x1={last.x} y1={last.y} x2={last.x} y2={by+bh} stroke={C.pink} strokeWidth={1} strokeDasharray="3 3" opacity={0.55}/>
+      <circle cx={last.x} cy={last.y} r={4.5} fill={C.pink} stroke={C.bg1} strokeWidth={2}/>
+      <rect x={bx} y={by} width={bw} height={bh} rx={4} fill={C.bg1} stroke={C.glassBorder}/>
+      <text x={bx+bw/2} y={by+15} textAnchor="middle" fontSize={10} fill={C.sub} fontFamily={C.f}>ultimo</text>
+      <text x={bx+bw/2} y={by+29} textAnchor="middle" fontSize={13} fontWeight="700" fill={C.text} fontFamily={C.fTight}>{val}{unit||""}</text>
+    </g>
+  );
+}
 function KPI({label,value,unit,color,C}){
   return(
-    <div style={{background:C.bg2,border:`1px solid ${C.border}`,borderRadius:16,padding:"14px 15px"}}>
+    <div style={{background:C.glass,backdropFilter:"blur(20px)",WebkitBackdropFilter:"blur(20px)",border:`1px solid ${C.glassBorder}`,borderRadius:4,padding:"14px 15px"}}>
       <div style={{fontSize:13,color:C.sub,marginBottom:6,fontWeight:500}}>{label}</div>
       <div style={{fontSize:24,fontWeight:700,color:color||C.text,lineHeight:1,letterSpacing:-0.3}}>
         {value??'—'}{unit&&<span style={{fontSize:13,color:C.sub,fontWeight:400,marginLeft:3}}>{unit}</span>}
@@ -815,6 +864,11 @@ export default function App(){
   const[syncing,setSyncing]=useState(false);
   const[tab,setTab]=useState("dashboard");
   const[sidebarCollapsed,setSidebarCollapsed]=useState(()=>localStorage.getItem("atk_sidebar")==="collapsed");
+  const[sidebarMode,setSidebarMode]=useState("dashboard");
+  const[checkinCardioSessions,setCheckinCardioSessions]=useState("");
+  const[checkinCardioMinutes,setCheckinCardioMinutes]=useState("");
+  const[checkinNotes,setCheckinNotes]=useState("");
+  const[checkinLoaded,setCheckinLoaded]=useState(false);
   const[toast,setToast]=useState(null);
   const[editDay,setEditDay]=useState(null);
   const[planSec,setPlanSec]=useState("current");
@@ -831,6 +885,7 @@ export default function App(){
   const[wInput,setWInput]=useState("");
   const[wDate,setWDate]=useState(todayStr());
   const[wNote,setWNote]=useState("");
+  const[dashPeriod,setDashPeriod]=useState("6m");
   const[showAllWeights,setShowAllWeights]=useState(false);
   const DAY_LABELS=["Lun","Mar","Mer","Gio","Ven","Sab","Dom"];
   const[dayPattern,setDayPattern]=useState(()=>{try{return JSON.parse(localStorage.getItem("atk_day_pattern"))||["on","on","on","on","off","off","off"];}catch{return["on","on","on","on","off","off","off"];}});
@@ -852,7 +907,7 @@ export default function App(){
           sb.from("athlete_planning").select("*").eq("user_id",user.id).order("created_at",{ascending:false}).limit(1),
           sb.from("athlete_meal_plan").select("*").eq("user_id",user.id),
         ]);
-        if(dr.data){const map={};dr.data.forEach(r=>{map[r.date]={type:r.type,calories:r.calories,protein:r.protein,carbs:r.carbs,fat:r.fat,steps:r.steps,note:r.note,isEstimate:r.is_estimate};});setDays(map);}
+        if(dr.data){const map={};dr.data.forEach(r=>{map[r.date]={type:r.type,calories:r.calories,protein:r.protein,carbs:r.carbs,fat:r.fat,steps:r.steps,note:r.note,isEstimate:r.is_estimate,cardioMinutes:r.cardio_minutes};});setDays(map);}
         if(wr.data)setWeightLog(wr.data.map(r=>({date:r.date,weight:r.weight,note:r.note})));
         if(pr.data&&pr.data.length){
           const sorted=[...pr.data].sort((a,b)=>a.date.localeCompare(b.date));
@@ -882,21 +937,27 @@ export default function App(){
     fetchAll();
   },[user]);
 
+  const currentWeekStart=()=>getWeekDates(0)[0];
   useEffect(()=>{
-    if(loading||!user)return;
-    const ids=["dashboard","oggi","peso","piano","planning","meal"];
-    const els=ids.map(id=>document.getElementById(`sec-${id}`)).filter(Boolean);
-    if(!els.length)return;
-    const obs=new IntersectionObserver(entries=>{
-      const visible=entries.filter(e=>e.isIntersecting).sort((a,b)=>a.boundingClientRect.top-b.boundingClientRect.top);
-      if(visible.length)setTab(visible[0].target.id.replace("sec-",""));
-    },{rootMargin:"-110px 0px -60% 0px",threshold:0});
-    els.forEach(el=>obs.observe(el));
-    return()=>obs.disconnect();
-  },[loading,user]);
+    if(!user)return;
+    (async()=>{
+      const{data}=await sb.from("athlete_week_checkin").select("*").eq("user_id",user.id).eq("week_start",currentWeekStart()).maybeSingle();
+      if(data){
+        setCheckinCardioSessions(data.cardio_target_sessions??"");
+        setCheckinCardioMinutes(data.cardio_target_minutes??"");
+        setCheckinNotes(data.notes??"");
+      }
+      setCheckinLoaded(true);
+    })();
+  },[user]);
+  async function saveCheckin(){
+    const ws=currentWeekStart();
+    const payload={user_id:user.id,week_start:ws,cardio_target_sessions:checkinCardioSessions?+checkinCardioSessions:null,cardio_target_minutes:checkinCardioMinutes?+checkinCardioMinutes:null,notes:checkinNotes};
+    const{error}=await sb.from("athlete_week_checkin").upsert(payload,{onConflict:"user_id,week_start"});
+    if(error)console.error(error);else showToast("Check-in salvato");
+  }
 
   const showToast=msg=>{setToast(msg);setTimeout(()=>setToast(null),2200);};
-  const scrollToSection=id=>{const el=document.getElementById(`sec-${id}`);if(el)el.scrollIntoView({behavior:"smooth",block:"start"});};
 
   const setDay=(date,data)=>setDays(p=>({...p,[date]:{...(p[date]||{}),...data}}));
 
@@ -906,9 +967,9 @@ export default function App(){
     const merged={...(days[date]||{}),...data};
     const existing=await sb.from("athlete_days").select("id").eq("date",date).eq("user_id",user.id).maybeSingle();
     if(existing.data){
-      await sb.from("athlete_days").update({type:merged.type,calories:merged.calories,protein:merged.protein,carbs:merged.carbs,fat:merged.fat,steps:merged.steps,note:merged.note,is_estimate:merged.isEstimate}).eq("date",date).eq("user_id",user.id);
+      await sb.from("athlete_days").update({type:merged.type,calories:merged.calories,protein:merged.protein,carbs:merged.carbs,fat:merged.fat,steps:merged.steps,note:merged.note,is_estimate:merged.isEstimate,cardio_minutes:merged.cardioMinutes}).eq("date",date).eq("user_id",user.id);
     }else{
-      await sb.from("athlete_days").insert({date,type:merged.type,calories:merged.calories,protein:merged.protein,carbs:merged.carbs,fat:merged.fat,steps:merged.steps,note:merged.note,is_estimate:merged.isEstimate,user_id:user.id});
+      await sb.from("athlete_days").insert({date,type:merged.type,calories:merged.calories,protein:merged.protein,carbs:merged.carbs,fat:merged.fat,steps:merged.steps,note:merged.note,is_estimate:merged.isEstimate,cardio_minutes:merged.cardioMinutes,user_id:user.id});
     }
     setSyncing(false);
   }
@@ -999,6 +1060,8 @@ export default function App(){
       avgProt:avg(withCal.map(d=>d.protein).filter(Boolean)),
       avgCarb:avg(withCal.map(d=>d.carbs).filter(Boolean)),
       avgFat:avg(withCal.map(d=>d.fat).filter(Boolean)),
+      avgSteps:avg(logged.map(d=>d.steps).filter(Boolean)),
+      cardioMinutesTotal:logged.reduce((s,d)=>s+(d.cardioMinutes||0),0),
     };
   }),[days]);
   const thisWeek=weeklyStats[7],lastWeek=weeklyStats[6];
@@ -1068,32 +1131,45 @@ export default function App(){
 
       {/* HEADER */}
       <div style={{background:C.headerBg,backdropFilter:"blur(24px)",borderBottom:`1px solid ${C.borderHi}`,padding:"0 32px",position:"sticky",top:0,zIndex:100,height:72}}>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",maxWidth:1760,margin:"0 auto",height:"100%",gap:8}}>
-          <div style={{display:"flex",alignItems:"center",gap:0,minWidth:0,flex:1}}>
-            <span style={{fontSize:24,fontWeight:700,letterSpacing:-0.3,color:C.text,flexShrink:0}}>Athlete</span>
-            <span style={{margin:"0 14px",color:C.muted,fontSize:24,lineHeight:1,fontWeight:200,flexShrink:0}}>|</span>
-            <span style={{fontSize:16,color:C.sub,fontWeight:400,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
-              {new Date().toLocaleDateString("it-IT",{weekday:"long",day:"numeric",month:"long"})}
-            </span>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",maxWidth:1760,margin:"0 auto",height:"100%",gap:12}}>
+          <div style={{display:"flex",alignItems:"center",gap:12,minWidth:0,flexShrink:0}}>
+            <span style={{width:22,height:22,background:C.pink,flexShrink:0}}/>
+            <span style={{fontSize:20,fontWeight:700,letterSpacing:-0.3,color:C.text,fontFamily:C.fTight}}>athlete tracker</span>
+          </div>
+          <div style={{display:"flex",gap:10,alignItems:"center",flex:1,justifyContent:"center",minWidth:0,overflow:"hidden"}}>
+            {lastW!=null&&(
+              <div style={{background:C.glass,backdropFilter:"blur(20px)",border:`1px solid ${C.border}`,borderLeft:`3px solid ${C.pink}`,borderRadius:6,padding:"7px 14px",display:"flex",flexDirection:"column",gap:1}}>
+                <span style={{fontSize:11,color:C.sub}}>peso</span>
+                <div style={{display:"flex",alignItems:"baseline",gap:5}}>
+                  <span style={{fontSize:14,fontWeight:700,color:C.text,fontFamily:C.fTight}}>{lastW} kg</span>
+                  {wDelta!=null&&<span style={{fontSize:11,color:wDelta<0?C.green:C.orange,fontWeight:600}}>{wDelta>0?"+":""}{wDelta}</span>}
+                </div>
+              </div>
+            )}
+            {thisWeek.avgCal&&(
+              <div style={{background:C.glass,backdropFilter:"blur(20px)",border:`1px solid ${C.border}`,borderLeft:`3px solid ${C.blue}`,borderRadius:6,padding:"7px 14px",display:"flex",flexDirection:"column",gap:1}}>
+                <span style={{fontSize:11,color:C.sub}}>calorie sett.</span>
+                <div style={{display:"flex",alignItems:"baseline",gap:5}}>
+                  <span style={{fontSize:14,fontWeight:700,color:C.text,fontFamily:C.fTight}}>{thisWeek.avgCal} kcal</span>
+                  {calDelta!=null&&<span style={{fontSize:11,color:calDelta<0?C.green:C.orange,fontWeight:600}}>{calDelta>0?"+":""}{calDelta}</span>}
+                </div>
+              </div>
+            )}
           </div>
           <div style={{display:"flex",gap:8,alignItems:"center",flexShrink:0}}>
             {syncing&&<span style={{fontSize:13,color:C.muted}}>Sync…</span>}
-            {lastW!=null&&(
-              <div style={{background:C.bg2,border:`1px solid ${C.border}`,borderRadius:10,padding:"6px 12px",display:"flex",alignItems:"baseline",gap:3}}>
-                <span style={{fontSize:18,fontWeight:700,color:C.teal}}>{lastW}</span>
-                <span style={{fontSize:13,color:C.muted}}>kg</span>
-                {wDelta!=null&&<span style={{fontSize:13,color:wDelta<0?C.green:C.orange,marginLeft:2,fontWeight:500}}>{wDelta>0?"+":""}{wDelta}</span>}
-              </div>
-            )}
-            <button onClick={()=>{const el=document.documentElement;if(!document.fullscreenElement){el.requestFullscreen?.();}else{document.exitFullscreen?.();}}} style={{background:C.bg2,border:`1px solid ${C.border}`,borderRadius:10,width:36,height:36,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0}} title="Schermo intero">
+            <button onClick={()=>setTab("oggi")} style={{background:`linear-gradient(135deg,${C.pink},${C.purple})`,border:"none",borderRadius:6,padding:"9px 16px",color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:C.f,whiteSpace:"nowrap"}}>
+              + nuovo log
+            </button>
+            <button onClick={()=>{const el=document.documentElement;if(!document.fullscreenElement){el.requestFullscreen?.();}else{document.exitFullscreen?.();}}} style={{background:C.bg2,border:`1px solid ${C.border}`,borderRadius:6,width:36,height:36,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0}} title="Schermo intero">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={C.sub} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></svg>
             </button>
-            <button onClick={()=>setIsDark(p=>!p)} style={{background:C.bg2,border:`1px solid ${C.border}`,borderRadius:10,width:36,height:36,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0}}>
+            <button onClick={()=>setIsDark(p=>!p)} style={{background:C.bg2,border:`1px solid ${C.border}`,borderRadius:6,width:36,height:36,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0}}>
               {isDark
                 ?<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={C.sub} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
                 :<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={C.sub} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>}
             </button>
-            <button onClick={()=>sb.auth.signOut()} style={{background:C.bg2,border:`1px solid ${C.border}`,borderRadius:10,width:36,height:36,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0}} title="Esci">
+            <button onClick={()=>sb.auth.signOut()} style={{background:C.bg2,border:`1px solid ${C.border}`,borderRadius:6,width:36,height:36,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0}} title="Esci">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={C.sub} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
             </button>
           </div>
@@ -1106,6 +1182,24 @@ export default function App(){
           {/* SIDEBAR desktop */}
           {typeof window!=="undefined"&&window.innerWidth>=768&&(
             <div style={{position:"sticky",top:90,display:"flex",flexDirection:"column",gap:18}}>
+              {!sidebarCollapsed&&(
+                <div style={{display:"flex",alignItems:"center",gap:10,padding:"0 14px"}}>
+                  <div style={{width:32,height:32,borderRadius:"50%",background:`${C.pink}18`,border:`1px solid ${C.pink}40`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,fontWeight:700,color:C.pink,fontFamily:C.fTight,flexShrink:0}}>
+                    {(user?.email||"A")[0].toUpperCase()}
+                  </div>
+                  <span style={{fontSize:13,color:C.sub,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{user?.email}</span>
+                </div>
+              )}
+              {!sidebarCollapsed&&(
+                <div style={{display:"flex",background:C.bg2,borderRadius:8,padding:3,gap:2}}>
+                  {[["dashboard","Dashboard"],["checkin","Check-in"]].map(([v,l])=>(
+                    <button key={v} onClick={()=>{setSidebarMode(v);if(v==="checkin")setTab("checkin");else setTab("dashboard");}}
+                      style={{flex:1,padding:"8px 0",border:"none",borderRadius:6,background:sidebarMode===v?C.bg4:"transparent",color:sidebarMode===v?C.text:C.sub,fontSize:13,fontWeight:sidebarMode===v?600:400,cursor:"pointer",fontFamily:C.f,transition:"all 0.15s"}}>
+                      {l}
+                    </button>
+                  ))}
+                </div>
+              )}
               <button onClick={()=>setSidebarCollapsed(p=>!p)} title={sidebarCollapsed?"Espandi menu":"Riduci menu"}
                 style={{display:"flex",alignItems:"center",justifyContent:sidebarCollapsed?"center":"space-between",padding:"0 6px",background:"none",border:"none",cursor:"pointer",fontFamily:C.f}}>
                 {!sidebarCollapsed&&<span style={{fontSize:11,color:C.muted,fontWeight:600,letterSpacing:0.5,textTransform:"uppercase"}}>Menu</span>}
@@ -1114,14 +1208,14 @@ export default function App(){
                   {sidebarCollapsed?<polyline points="5 10 8 12 5 14"/>:<polyline points="18 10 15 12 18 14"/>}
                 </svg>
               </button>
-              {NAV_GROUPS.map(g=>(
+              {sidebarMode==="dashboard"&&NAV_GROUPS.map(g=>(
                 <div key={g}>
                   {!sidebarCollapsed&&<div style={{fontSize:11,color:C.muted,fontWeight:600,letterSpacing:0.5,textTransform:"uppercase",padding:"0 14px",marginBottom:8}}>{g}</div>}
                   <div style={{display:"flex",flexDirection:"column",gap:2}}>
                     {NAV.filter(n=>n.group===g).map(n=>{
                       const active=tab===n.id;
                       return(
-                        <button key={n.id} onClick={()=>scrollToSection(n.id)} title={sidebarCollapsed?n.label:undefined}
+                        <button key={n.id} onClick={()=>setTab(n.id)} title={sidebarCollapsed?n.label:undefined}
                           style={{display:"flex",alignItems:"center",gap:13,padding:sidebarCollapsed?"11px 0":"11px 14px",justifyContent:sidebarCollapsed?"center":"flex-start",borderRadius:"0 10px 10px 0",borderLeft:`2px solid ${active?C.blue:"transparent"}`,background:active?`${C.blue}12`:"transparent",color:active?C.blue:C.sub,fontSize:15,fontWeight:active?600:500,cursor:"pointer",fontFamily:C.f,textAlign:"left",transition:"all 0.15s"}}>
                           {n.icon(active)}{!sidebarCollapsed&&n.label}
                         </button>
@@ -1137,77 +1231,112 @@ export default function App(){
           <div style={{display:"flex",flexDirection:"column",gap:16}}>
 
             {/* ── DASHBOARD ── */}
-            <section id="sec-dashboard" style={{scrollMarginTop:100,display:"flex",flexDirection:"column",gap:16}}>
-              <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(280px,1fr))",gap:16}}>
-                <Card C={C} style={{padding:"22px 24px"}}>
-                  <div style={{fontSize:13,color:C.sub,marginBottom:10,fontWeight:500}}>Peso attuale</div>
-                  <div style={{display:"flex",alignItems:"baseline",gap:8}}>
-                    <span style={{fontSize:44,fontWeight:700,color:C.teal,lineHeight:1,letterSpacing:-1}}>{lastW??'—'}</span>
-                    <span style={{fontSize:16,color:C.sub}}>kg</span>
-                    {avgW7delta!=null&&<Tag label={`media sett. ${avgW7delta>0?"+":""}${avgW7delta}`} color={avgW7delta<0?C.green:C.orange}/>}
+            {tab==="dashboard"&&(<>
+              <Kicker label="dashboard" C={C}/>
+
+              {weightChart.length>1&&(()=>{
+                const periods={"1m":30,"3m":90,"6m":180,"1y":365,"all":9999};
+                const n=periods[dashPeriod]||9999;
+                const dataFull=weightChart.slice(-n);
+                const values=dataFull.map(d=>d.Peso);
+                const W=1000,H=300;
+                const path=buildLinePath(values,W,H);
+                const min=Math.min(...values),max=Math.max(...values),range=max-min||1;
+                const histBars=values.map(v=>18+((v-min)/range)*55);
+                const badgeIdx=Math.max(0,Math.min(values.length-1,Math.floor((values.length-1)*0.75)));
+                const badgePt=pointPct(values,badgeIdx,12,10);
+                const idxLabels=[0,1,2,3,4,5].map(k=>Math.round(k*(dataFull.length-1)/5));
+                return(
+                  <Card C={C} onClick={()=>setTab("peso")} style={{position:"relative"}}>
+                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:14,flexWrap:"wrap",gap:12}}>
+                      <div>
+                        <div style={{fontSize:12,color:C.sub,fontWeight:500,textTransform:"lowercase"}}>andamento peso</div>
+                        <div style={{display:"flex",alignItems:"baseline",gap:10,marginTop:6}}>
+                          <span style={{fontSize:34,fontWeight:800,color:C.text,lineHeight:1,fontFamily:C.fTight}}>{lastW??'—'} <span style={{fontSize:14,fontWeight:500,color:C.sub}}>kg</span></span>
+                          {avgW7delta!=null&&<Tag label={`${avgW7delta>0?"+":""}${avgW7delta} sett.`} color={avgW7delta<0?C.green:C.orange}/>}
+                        </div>
+                      </div>
+                      <div onClick={e=>e.stopPropagation()} style={{display:"flex",background:C.bg2,borderRadius:6,padding:3,gap:2}}>
+                        {[["1m","1M"],["3m","3M"],["6m","6M"],["1y","1A"],["all","Tutto"]].map(([v,l])=>(
+                          <button key={v} onClick={()=>setDashPeriod(v)}
+                            style={{padding:"6px 10px",border:"none",borderRadius:5,background:dashPeriod===v?C.bg4:"transparent",color:dashPeriod===v?C.text:C.sub,fontSize:12,fontWeight:dashPeriod===v?600:400,cursor:"pointer",fontFamily:C.f}}>
+                            {l}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div style={{position:"relative",height:340}}>
+                      <div style={{position:"absolute",left:0,right:0,bottom:22,top:"12%",display:"flex",alignItems:"flex-end",gap:2,opacity:0.5}}>
+                        {histBars.map((h,i)=>(
+                          <div key={i} style={{flex:1,height:`${h}%`,background:`linear-gradient(180deg,${C.pink}38,${C.pink}00)`}}/>
+                        ))}
+                      </div>
+                      <svg viewBox={`0 0 ${W} ${H}`} style={{width:"100%",height:"calc(100% - 22px)",display:"block",position:"relative"}} preserveAspectRatio="none">
+                        <defs>
+                          <linearGradient id="wgHero" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stopColor={C.pink} stopOpacity={0.3}/><stop offset="100%" stopColor={C.pink} stopOpacity={0}/>
+                          </linearGradient>
+                        </defs>
+                        <path d={path.area} fill="url(#wgHero)" stroke="none"/>
+                        <path d={path.line} fill="none" stroke={C.pink} strokeWidth={2.2}
+                          style={{filter:`drop-shadow(0 0 6px ${C.pink}E6) drop-shadow(0 0 12px ${C.pink}80)`}}/>
+                      </svg>
+                      <div style={{position:"absolute",left:`${badgePt.xPct}%`,top:0,bottom:22,width:1,borderLeft:"1px dashed rgba(255,255,255,0.15)"}}/>
+                      <div style={{position:"absolute",left:`${badgePt.xPct}%`,top:`${badgePt.yPct}%`,transform:"translate(-50%,-140%)",background:C.bg1,border:`1px solid ${C.glassBorder}`,borderRadius:6,padding:"8px 12px",whiteSpace:"nowrap",boxShadow:"0 12px 24px rgba(0,0,0,0.4)"}}>
+                        <div style={{fontSize:13,fontWeight:700,color:C.text,fontFamily:C.fTight}}>{values[badgeIdx].toFixed(1)} kg</div>
+                        <div style={{fontSize:10,color:C.sub}}>{dataFull[badgeIdx]?.date}</div>
+                      </div>
+                      <div style={{display:"flex",justifyContent:"space-between",position:"absolute",left:0,right:0,bottom:0}}>
+                        {idxLabels.map((idx,i)=>(
+                          <span key={i} style={{fontSize:10,color:C.muted}}>{dataFull[idx]?.date}</span>
+                        ))}
+                      </div>
+                    </div>
+                  </Card>
+                );
+              })()}
+
+              <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(240px,1fr))",gap:16}}>
+                <Card C={C} onClick={()=>setTab("piano")} style={{borderLeft:`3px solid ${C.pink}`}}>
+                  <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:14}}>
+                    <span style={{width:3,height:14,background:C.pink}}/>
+                    <span style={{fontSize:13,fontWeight:600,color:C.text,fontFamily:C.fTight}}>giorno ON</span>
+                  </div>
+                  <div style={{fontSize:24,fontWeight:700,color:C.text,fontFamily:C.fTight,marginBottom:10}}>{plan.onCal} <span style={{fontSize:13,color:C.sub,fontWeight:400}}>kcal</span></div>
+                  <div style={{display:"flex",gap:12,fontSize:12,color:C.sub}}>
+                    <span>P {plan.onP}g</span><span>C {plan.onC}g</span><span>G {plan.onF}g</span>
                   </div>
                 </Card>
-                <Card C={C} style={{padding:"22px 24px"}}>
-                  <div style={{fontSize:13,color:C.sub,marginBottom:10,fontWeight:500}}>Media calorie settimanale</div>
-                  <div style={{display:"flex",alignItems:"baseline",gap:8}}>
-                    <span style={{fontSize:44,fontWeight:700,color:C.blue,lineHeight:1,letterSpacing:-1}}>{thisWeek.avgCal??'—'}</span>
-                    <span style={{fontSize:16,color:C.sub}}>kcal</span>
-                    {calDelta!=null&&<Tag label={`${calDelta>0?"+":""}${calDelta} vs scorsa`} color={calDelta<0?C.green:C.orange}/>}
+                <Card C={C} onClick={()=>setTab("piano")} style={{borderLeft:`3px solid ${C.blue}`}}>
+                  <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:14}}>
+                    <span style={{width:3,height:14,background:C.blue}}/>
+                    <span style={{fontSize:13,fontWeight:600,color:C.text,fontFamily:C.fTight}}>giorno OFF</span>
                   </div>
+                  <div style={{fontSize:24,fontWeight:700,color:C.text,fontFamily:C.fTight,marginBottom:10}}>{plan.offCal} <span style={{fontSize:13,color:C.sub,fontWeight:400}}>kcal</span></div>
+                  <div style={{display:"flex",gap:12,fontSize:12,color:C.sub}}>
+                    <span>P {plan.offP}g</span><span>C {plan.offC}g</span><span>G {plan.offF}g</span>
+                  </div>
+                </Card>
+                <Card C={C} onClick={()=>setTab("oggi")} style={{borderLeft:`3px solid ${C.orange}`}}>
+                  <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:14}}>
+                    <span style={{width:3,height:14,background:C.orange}}/>
+                    <span style={{fontSize:13,fontWeight:600,color:C.text,fontFamily:C.fTight}}>media passi</span>
+                  </div>
+                  <div style={{fontSize:24,fontWeight:700,color:C.text,fontFamily:C.fTight}}>{thisWeek.avgSteps??'—'} <span style={{fontSize:13,color:C.sub,fontWeight:400}}>passi/gg</span></div>
+                </Card>
+                <Card C={C} onClick={()=>setTab("checkin")} style={{borderLeft:`3px solid ${C.green}`}}>
+                  <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:14}}>
+                    <span style={{width:3,height:14,background:C.green}}/>
+                    <span style={{fontSize:13,fontWeight:600,color:C.text,fontFamily:C.fTight}}>ultimo check-in</span>
+                  </div>
+                  <div style={{fontSize:13,color:C.sub}}>{checkinNotes?checkinNotes.slice(0,60)+(checkinNotes.length>60?"…":""):"Nessuna nota questa settimana"}</div>
                 </Card>
               </div>
-
-              {/* Grafico media calorica settimanale */}
-              <Card C={C}>
-                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:18}}>
-                  <span style={{fontSize:16,fontWeight:600,color:C.text}}>Andamento calorie settimanali</span>
-                  {calDelta!=null&&<Tag label={`${calDelta>0?"+":""}${calDelta} vs scorsa`} color={calDelta<0?C.green:C.orange}/>}
-                </div>
-                {weekCalChart.length>1?(
-                  <ResponsiveContainer width="100%" height={320}>
-                    <BarChart data={weekCalChart} barSize={36}>
-                      <CartesianGrid strokeDasharray="3 3" stroke={isDark?"rgba(255,255,255,0.04)":"rgba(0,0,0,0.04)"} vertical={false}/>
-                      <XAxis dataKey="week" tick={{fill:C.muted,fontSize:13}} axisLine={false} tickLine={false}/>
-                      <YAxis tick={{fill:C.muted,fontSize:12}} axisLine={false} tickLine={false} domain={["auto","auto"]} width={40}/>
-                      <Tooltip content={<CTip C={C}/>}/>
-                      <Bar dataKey="Media" fill={C.blue} radius={[6,6,0,0]}
-                        label={{position:"top",fill:C.sub,fontSize:12,formatter:v=>v?v:""}}/>
-                    </BarChart>
-                  </ResponsiveContainer>
-                ):<div style={{fontSize:15,color:C.muted,textAlign:"center",padding:"30px 0"}}>Disponibile dopo la prima settimana</div>}
-              </Card>
-
-              {weightChart.length>1&&(
-                <Card C={C} onClick={()=>setTab("peso")}>
-                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:18}}>
-                    <span style={{fontSize:16,fontWeight:600,color:C.text}}>Andamento peso</span>
-                    <span style={{fontSize:14,color:C.blue}}>Dettaglio →</span>
-                  </div>
-                  <ResponsiveContainer width="100%" height={320}>
-                    <AreaChart data={weightChart}>
-                      <defs><linearGradient id="wg" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor={C.teal} stopOpacity={0.25}/><stop offset="95%" stopColor={C.teal} stopOpacity={0}/></linearGradient></defs>
-                      <CartesianGrid strokeDasharray="3 3" stroke={isDark?"rgba(255,255,255,0.04)":"rgba(0,0,0,0.04)"} vertical={false}/>
-                      <Area type="monotone" dataKey="Peso" stroke={C.teal} strokeWidth={2} fill="url(#wg)" dot={false}/>
-                      <YAxis domain={["auto","auto"]} tick={{fill:C.muted,fontSize:12}} axisLine={false} tickLine={false} width={40}/>
-                      <XAxis dataKey="date" tick={{fill:C.muted,fontSize:12}} axisLine={false} tickLine={false} interval="preserveStartEnd"/>
-                      <Tooltip content={<CTip C={C}/>}/>
-                    </AreaChart>
-                  </ResponsiveContainer>
-                </Card>
-              )}
-
-              {thisWeek.avgProt&&(
-                <Card C={C}>
-                  <div style={{fontSize:16,fontWeight:600,color:C.text,marginBottom:12}}>Media macro — settimana</div>
-                  <MBar C={C} label="Proteine" value={thisWeek.avgProt} max={plan.onP} color={C.green}/>
-                  <MBar C={C} label="Carboidrati" value={thisWeek.avgCarb} max={plan.onC} color={C.orange}/>
-                  <MBar C={C} label="Grassi" value={thisWeek.avgFat} max={plan.onF} color={C.purple}/>
-                </Card>
-              )}
-            </section>
+            </>)}
 
             {/* ── OGGI ── */}
-            <section id="sec-oggi" style={{scrollMarginTop:100,display:"flex",flexDirection:"column",gap:16}}>
+            {tab==="oggi"&&(<>
               <Card C={C}>
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
                   <div style={{display:"flex",gap:8,alignItems:"center"}}>
@@ -1250,9 +1379,15 @@ export default function App(){
                     </div>
                   ))}
                 </div>
-                <div style={{marginBottom:12}}>
-                  <div style={{fontSize:13,color:C.sub,marginBottom:6,fontWeight:500}}>Passi</div>
-                  <input type="number" key={`steps-${today}`} defaultValue={todayData.steps??""} onBlur={e=>upsertDay(today,{steps:e.target.value?+e.target.value:null})} placeholder="8000" style={inp}/>
+                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:12}}>
+                  <div>
+                    <div style={{fontSize:13,color:C.sub,marginBottom:6,fontWeight:500}}>Passi</div>
+                    <input type="number" key={`steps-${today}`} defaultValue={todayData.steps??""} onBlur={e=>upsertDay(today,{steps:e.target.value?+e.target.value:null})} placeholder="8000" style={inp}/>
+                  </div>
+                  <div>
+                    <div style={{fontSize:13,color:C.sub,marginBottom:6,fontWeight:500}}>Cardio (min, opzionale)</div>
+                    <input type="number" key={`cardio-${today}`} defaultValue={todayData.cardioMinutes??""} onBlur={e=>upsertDay(today,{cardioMinutes:e.target.value?+e.target.value:null})} placeholder="0" style={inp}/>
+                  </div>
                 </div>
                 <div style={{marginBottom:16}}>
                   <div style={{fontSize:13,color:C.sub,marginBottom:6,fontWeight:500}}>Note</div>
@@ -1349,13 +1484,28 @@ export default function App(){
                   <div style={{fontSize:14,color:C.muted,textAlign:"center",padding:"16px 0"}}>Nessuna settimana con dati ancora.</div>
                 )}
               </Card>
-            </section>
+            </>)}
 
             {/* ── PESO ── */}
-            <section id="sec-peso" style={{scrollMarginTop:100,display:"flex",flexDirection:"column",gap:16}}>
-              <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(120px,1fr))",gap:10}}>
-                <KPI C={C} label="Attuale" value={lastW} unit="kg" color={C.teal}/>
-                <KPI C={C} label={wDeltaLabel} value={wDelta!=null?(wDelta>0?`+${wDelta}`:wDelta):null} unit="kg" color={wDelta!=null?(wDelta<0?C.green:C.orange):C.muted}/>
+            {tab==="peso"&&(<>
+              <Kicker label="misurazione peso giornaliera" C={C}/>
+              <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(220px,1fr))",gap:16}}>
+                <Card C={C} style={{padding:"14px 22px"}}>
+                  <div style={{fontSize:13,color:C.text,marginBottom:6,fontWeight:500}}>peso giornaliero</div>
+                  <div style={{display:"flex",alignItems:"baseline",gap:8}}>
+                    <span style={{fontSize:34,fontWeight:700,color:C.text,lineHeight:1,letterSpacing:-0.5,fontFamily:C.fTight}}>{lastW??'—'}</span>
+                    <span style={{fontSize:14,color:C.sub}}>kg</span>
+                  </div>
+                </Card>
+                <Card C={C} style={{padding:"14px 22px"}}>
+                  <div style={{fontSize:13,color:C.text,marginBottom:6,fontWeight:500}}>{wDeltaLabel?.toLowerCase()}</div>
+                  <div style={{display:"flex",alignItems:"baseline",gap:8}}>
+                    <span style={{fontSize:34,fontWeight:700,color:wDelta!=null?(wDelta<0?C.green:C.orange):C.muted,lineHeight:1,letterSpacing:-0.5,fontFamily:C.fTight}}>
+                      {wDelta!=null?(wDelta>0?`+${wDelta}`:wDelta):'—'}
+                    </span>
+                    <span style={{fontSize:14,color:C.sub}}>kg</span>
+                  </div>
+                </Card>
               </div>
               {avgW7&&(
                 <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(120px,1fr))",gap:10}}>
@@ -1380,39 +1530,43 @@ export default function App(){
                   <input value={wNote} onChange={e=>setWNote(e.target.value)} placeholder="Es: mattina a digiuno…" style={inp}/>
                 </div>
                 <button onClick={()=>{if(!wInput)return;upsertWeight(wDate,wInput,wNote);setWInput("");setWNote("");showToast("Peso salvato");}}
-                  style={{width:"100%",padding:11,background:`linear-gradient(135deg,${C.teal},${C.blue})`,border:"none",borderRadius:12,color:"#fff",fontSize:15,fontWeight:600,cursor:"pointer",fontFamily:C.f}}>
+                  style={{width:"100%",padding:11,background:`linear-gradient(135deg,${C.pink},${C.purple})`,border:"none",borderRadius:6,color:"#fff",fontSize:15,fontWeight:600,cursor:"pointer",fontFamily:C.f}}>
                   Salva
                 </button>
               </Card>
               {weightChart.length>1&&(
                 <Card C={C}>
-                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
-                    <span style={{fontSize:15,fontWeight:600,color:C.text}}>Andamento peso</span>
-                    <div style={{display:"flex",gap:10}}>
-                      <div style={{display:"flex",gap:4,alignItems:"center"}}><div style={{width:14,height:2,background:C.teal,borderRadius:99}}/><span style={{fontSize:12,color:C.muted}}>Giornaliero</span></div>
-                      {weightWeeklyAvg.length>1&&<div style={{display:"flex",gap:4,alignItems:"center"}}><div style={{width:14,height:3,background:C.blue,borderRadius:99}}/><span style={{fontSize:12,color:C.muted}}>Media sett.</span></div>}
-                    </div>
+                  <Kicker label="grafico" C={C}/>
+                  <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:14}}>
+                    <span style={{width:3,height:16,background:C.pink}}/>
+                    <span style={{fontSize:15,fontWeight:600,color:C.text,fontFamily:C.fTight}}>Andamento peso</span>
                   </div>
                   <ResponsiveContainer width="100%" height={200}>
                     <AreaChart data={weightChart}>
-                      <defs><linearGradient id="wg2" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor={C.teal} stopOpacity={0.15}/><stop offset="95%" stopColor={C.teal} stopOpacity={0}/></linearGradient></defs>
-                      <CartesianGrid strokeDasharray="3 3" stroke={isDark?"rgba(255,255,255,0.04)":"rgba(0,0,0,0.05)"}/>
-                      <XAxis dataKey="date" tick={{fill:C.muted,fontSize:11}} axisLine={false} tickLine={false} interval="preserveStartEnd"/>
+                      <defs><linearGradient id="wg2" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor={C.pink} stopOpacity={0.35}/><stop offset="95%" stopColor={C.pink} stopOpacity={0}/></linearGradient></defs>
+                      <CartesianGrid strokeDasharray="3 3" stroke={isDark?"rgba(255,255,255,0.05)":"rgba(0,0,0,0.05)"}/>
+                      <XAxis dataKey="date" tick={{fill:C.muted,fontSize:11}} axisLine={false} tickLine={false} interval={Math.max(0,Math.ceil(weightChart.length/6)-1)}/>
                       <YAxis tick={{fill:C.muted,fontSize:12}} axisLine={false} tickLine={false} domain={["auto","auto"]}/>
                       <Tooltip content={<CTip C={C}/>}/>
-                      <Area type="monotone" dataKey="Peso" stroke={C.teal} strokeWidth={1.5} fill="url(#wg2)" dot={{fill:C.teal,r:2,strokeWidth:0}} opacity={0.8}/>
+                      <Area type="monotone" dataKey="Peso" stroke={C.pink} strokeWidth={2} fill="url(#wg2)" dot={false}/>
                     </AreaChart>
                   </ResponsiveContainer>
                   {weightWeeklyAvg.length>1&&(
+                    <>
+                    <div style={{display:"flex",alignItems:"center",gap:8,margin:"18px 0 10px"}}>
+                      <span style={{width:3,height:16,background:C.blue}}/>
+                      <span style={{fontSize:13,fontWeight:600,color:C.text,fontFamily:C.fTight}}>Media settimanale</span>
+                    </div>
                     <ResponsiveContainer width="100%" height={90}>
                       <AreaChart data={weightWeeklyAvg}>
                         <defs><linearGradient id="wgavg" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor={C.blue} stopOpacity={0.18}/><stop offset="95%" stopColor={C.blue} stopOpacity={0}/></linearGradient></defs>
-                        <XAxis dataKey="date" tick={{fill:C.muted,fontSize:11}} axisLine={false} tickLine={false}/>
+                        <XAxis dataKey="date" tick={{fill:C.muted,fontSize:11}} axisLine={false} tickLine={false} interval={Math.max(0,Math.ceil(weightWeeklyAvg.length/6)-1)}/>
                         <YAxis tick={{fill:C.muted,fontSize:12}} axisLine={false} tickLine={false} domain={["auto","auto"]}/>
                         <Tooltip content={<CTip C={C}/>}/>
-                        <Area type="monotone" dataKey="Media" stroke={C.blue} strokeWidth={2.5} fill="url(#wgavg)" dot={{fill:C.blue,r:4,strokeWidth:0}}/>
+                        <Area type="monotone" dataKey="Media" stroke={C.blue} strokeWidth={2.5} fill="url(#wgavg)" dot={false}/>
                       </AreaChart>
                     </ResponsiveContainer>
+                    </>
                   )}
                 </Card>
               )}
@@ -1435,11 +1589,11 @@ export default function App(){
                 ))}
                 {!weightLog.length&&<div style={{color:C.muted,textAlign:"center",padding:24,fontSize:15}}>Nessuna pesata registrata.</div>}
               </Card>
-            </section>
+            </>)}
 
             {/* ── CHAT ── */}
             {/* ── PIANO ── */}
-            <section id="sec-piano" style={{scrollMarginTop:100,display:"flex",flexDirection:"column",gap:16}}>
+            {tab==="piano"&&(<>
               <Seg C={C} options={[{value:"current",label:"Piano attuale"},{value:"history",label:"Storico variazioni"}]} value={planSec} onChange={setPlanSec}/>
               {planSec==="current"&&(<>
                 <Card C={C}>
@@ -1556,10 +1710,10 @@ export default function App(){
                   {sortedPH.length<=1&&<div style={{color:C.muted,textAlign:"center",padding:30,fontSize:15}}>Nessuna variazione registrata.</div>}
                 </div>
               )}
-            </section>
+            </>)}
 
             {/* ── PLANNING ── */}
-            <section id="sec-planning" style={{scrollMarginTop:100,display:"flex",flexDirection:"column",gap:16}}>
+            {tab==="planning"&&(<>
               {planningView==="setup"&&(
                 <PlanningSetup C={C} inp={inp} lastW={lastW} plan={plan} todayStr={todayStr} fmtShort={fmtShort} setPlanning={setPlanning} setPlanningView={setPlanningView}/>
               )}
@@ -1851,10 +2005,10 @@ export default function App(){
                   </>
                 );
               })()}
-            </section>
+            </>)}
 
             {/* ── MEAL PLAN ── */}
-            <section id="sec-meal" style={{scrollMarginTop:100}}>
+            {tab==="meal"&&(
               <MealPlan
                 C={C} inp={inp} sb={sb} user={user}
                 mealPlanOn={mealPlanOn} setMealPlanOn={setMealPlanOn}
@@ -1863,7 +2017,47 @@ export default function App(){
                 mealPlanOffId={mealPlanOffId} setMealPlanOffId={setMealPlanOffId}
                 showToast={showToast} todayType={todayType} today={today}
               />
-            </section>
+            )}
+
+            {tab==="checkin"&&(<>
+              <Kicker label="check-in settimanale" C={C}/>
+              <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(150px,1fr))",gap:12}}>
+                <KPI C={C} label="Media passi" value={thisWeek.avgSteps} unit="passi" color={C.blue}/>
+                <KPI C={C} label="Media calorie" value={thisWeek.avgCal} unit="kcal" color={C.orange}/>
+                <KPI C={C} label="Media peso" value={avgW7} unit="kg" color={C.pink}/>
+              </div>
+              <Card C={C}>
+                <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:16}}>
+                  <span style={{width:3,height:16,background:C.blue}}/>
+                  <span style={{fontSize:15,fontWeight:600,color:C.text,fontFamily:C.fTight}}>Cardio della settimana</span>
+                </div>
+                <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:16}}>
+                  <span style={{fontSize:28,fontWeight:700,color:C.text,fontFamily:C.fTight}}>{thisWeek.cardioMinutesTotal||0}</span>
+                  <span style={{fontSize:14,color:C.sub}}>min fatti{checkinCardioMinutes?` / ${checkinCardioMinutes} min target`:""}</span>
+                </div>
+                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
+                  <div>
+                    <div style={{fontSize:12,color:C.muted,marginBottom:4,fontWeight:500}}>SESSIONI TARGET / SETT.</div>
+                    <input type="number" value={checkinCardioSessions} onChange={e=>setCheckinCardioSessions(e.target.value)} placeholder="3" style={inp}/>
+                  </div>
+                  <div>
+                    <div style={{fontSize:12,color:C.muted,marginBottom:4,fontWeight:500}}>MINUTI TARGET / SETT.</div>
+                    <input type="number" value={checkinCardioMinutes} onChange={e=>setCheckinCardioMinutes(e.target.value)} placeholder="90" style={inp}/>
+                  </div>
+                </div>
+              </Card>
+              <Card C={C}>
+                <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:16}}>
+                  <span style={{width:3,height:16,background:C.pink}}/>
+                  <span style={{fontSize:15,fontWeight:600,color:C.text,fontFamily:C.fTight}}>Note della settimana</span>
+                </div>
+                <textarea value={checkinNotes} onChange={e=>setCheckinNotes(e.target.value)} placeholder="Come è andata la settimana? Sonno, energia, sensazioni, cambiamenti…" rows={5}
+                  style={{...inp,resize:"vertical",fontFamily:C.f,lineHeight:1.5}}/>
+                <button onClick={saveCheckin} style={{marginTop:12,width:"100%",padding:11,background:`linear-gradient(135deg,${C.pink},${C.purple})`,border:"none",borderRadius:6,color:"#fff",fontSize:15,fontWeight:600,cursor:"pointer",fontFamily:C.f}}>
+                  Salva check-in
+                </button>
+              </Card>
+            </>)}
 
           </div>
         </div>
@@ -1873,7 +2067,7 @@ export default function App(){
           {NAV.map(n=>{
             const active=tab===n.id;
             return(
-              <button key={n.id} onClick={()=>scrollToSection(n.id)} style={{background:"none",border:"none",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:4,padding:"4px 10px",fontFamily:C.f}}>
+              <button key={n.id} onClick={()=>setTab(n.id)} style={{background:"none",border:"none",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:4,padding:"4px 10px",fontFamily:C.f}}>
                 <div style={{transform:active?"translateY(-1px)":"none",transition:"transform 0.18s ease"}}>{n.icon(active)}</div>
                 <span style={{fontSize:12,color:active?C.blue:C.muted,fontWeight:active?600:400,transition:"color 0.18s"}}>{n.label}</span>
               </button>
