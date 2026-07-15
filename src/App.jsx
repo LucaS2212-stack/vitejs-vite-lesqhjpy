@@ -65,22 +65,22 @@ function Card({children,style,onClick,hi,C}){
 function KPI({label,value,unit,color,C}){
   return(
     <div style={{background:C.bg2,border:`1px solid ${C.border}`,borderRadius:16,padding:"14px 15px"}}>
-      <div style={{fontSize:11,color:C.sub,marginBottom:6,fontWeight:500}}>{label}</div>
-      <div style={{fontSize:22,fontWeight:700,color:color||C.text,lineHeight:1,letterSpacing:-0.3}}>
-        {value??'—'}{unit&&<span style={{fontSize:11,color:C.sub,fontWeight:400,marginLeft:3}}>{unit}</span>}
+      <div style={{fontSize:13,color:C.sub,marginBottom:6,fontWeight:500}}>{label}</div>
+      <div style={{fontSize:24,fontWeight:700,color:color||C.text,lineHeight:1,letterSpacing:-0.3}}>
+        {value??'—'}{unit&&<span style={{fontSize:13,color:C.sub,fontWeight:400,marginLeft:3}}>{unit}</span>}
       </div>
     </div>
   );
 }
 function Tag({label,color}){
-  return <span style={{fontSize:10,fontWeight:600,letterSpacing:0.4,background:`${color}14`,color,border:`1px solid ${color}22`,borderRadius:8,padding:"3px 9px"}}>{label}</span>;
+  return <span style={{fontSize:12,fontWeight:600,letterSpacing:0.4,background:`${color}14`,color,border:`1px solid ${color}22`,borderRadius:8,padding:"3px 9px"}}>{label}</span>;
 }
 function Seg({options,value,onChange,C}){
   return(
     <div style={{display:"flex",background:C.bg3,borderRadius:14,padding:4,gap:3}}>
       {options.map(o=>(
         <button key={o.value} onClick={()=>onChange(o.value)}
-          style={{flex:1,padding:"9px 0",border:"none",borderRadius:11,background:value===o.value?C.bg1:"transparent",color:value===o.value?C.text:C.sub,fontSize:12,fontWeight:value===o.value?600:400,cursor:"pointer",fontFamily:C.f,boxShadow:value===o.value?C.shadow:"none",transition:"all 0.2s"}}>
+          style={{flex:1,padding:"9px 0",border:"none",borderRadius:11,background:value===o.value?C.bg1:"transparent",color:value===o.value?C.text:C.sub,fontSize:14,fontWeight:value===o.value?600:400,cursor:"pointer",fontFamily:C.f,boxShadow:value===o.value?C.shadow:"none",transition:"all 0.2s"}}>
           {o.label}
         </button>
       ))}
@@ -92,8 +92,8 @@ function MBar({label,value,max,color,C}){
   return(
     <div style={{marginBottom:11}}>
       <div style={{display:"flex",justifyContent:"space-between",marginBottom:5}}>
-        <span style={{fontSize:12,color:C.sub,fontWeight:500}}>{label}</span>
-        <span style={{fontSize:12,color:C.text,fontWeight:500}}>{value??'—'}<span style={{color:C.muted,fontWeight:400}}>/{max}g</span></span>
+        <span style={{fontSize:14,color:C.sub,fontWeight:500}}>{label}</span>
+        <span style={{fontSize:14,color:C.text,fontWeight:500}}>{value??'—'}<span style={{color:C.muted,fontWeight:400}}>/{max}g</span></span>
       </div>
       <div style={{height:5,background:C.bg3,borderRadius:99,overflow:"hidden"}}>
         <div style={{height:5,width:`${pct}%`,background:color,borderRadius:99,transition:"width 0.5s ease"}}/>
@@ -104,8 +104,8 @@ function MBar({label,value,max,color,C}){
 function CTip({active,payload,label,C}){
   if(!active||!payload?.length)return null;
   return(
-    <div style={{background:C?.bg1,border:`1px solid ${C?.borderHi}`,borderRadius:14,padding:"10px 14px",fontSize:12,boxShadow:"0 8px 32px rgba(0,0,0,0.35)"}}>
-      <div style={{color:C?.sub,marginBottom:5,fontSize:10,fontWeight:500}}>{label}</div>
+    <div style={{background:C?.bg1,border:`1px solid ${C?.borderHi}`,borderRadius:14,padding:"10px 14px",fontSize:14,boxShadow:"0 8px 32px rgba(0,0,0,0.35)"}}>
+      <div style={{color:C?.sub,marginBottom:5,fontSize:12,fontWeight:500}}>{label}</div>
       {payload.map((p,i)=>p.value!=null&&<div key={i} style={{color:p.color,fontWeight:600}}>{p.name}: {p.value}{p.name==="Peso"?" kg":p.name==="Passi"?"":" kcal"}</div>)}
     </div>
   );
@@ -120,7 +120,7 @@ function AuthScreen({C}){
   const[msg,setMsg]=useState("");
   const[err,setErr]=useState("");
   const[remember,setRemember]=useState(true);
-  const inp={background:C.bg3,border:`1px solid ${C.border}`,borderRadius:13,color:C.text,padding:"11px 14px",fontSize:14,outline:"none",width:"100%",fontFamily:C.f,boxSizing:"border-box"};
+  const inp={background:C.bg3,border:`1px solid ${C.border}`,borderRadius:13,color:C.text,padding:"11px 14px",fontSize:16,outline:"none",width:"100%",fontFamily:C.f,boxSizing:"border-box"};
   async function handle(){
     if(!email||!password){setErr("Inserisci email e password");return;}
     setLoading(true);setErr("");setMsg("");
@@ -138,18 +138,18 @@ function AuthScreen({C}){
     <div style={{minHeight:"100vh",background:C.bg0,display:"flex",alignItems:"center",justifyContent:"center",padding:20,fontFamily:C.f}}>
       <div style={{width:"100%",maxWidth:380}}>
         <div style={{textAlign:"center",marginBottom:32}}>
-          <div style={{fontSize:28,fontWeight:700,letterSpacing:-0.5,color:C.text}}>Athlete</div>
-          <div style={{fontSize:13,color:C.sub,marginTop:4}}>Il tuo tracker personale</div>
+          <div style={{fontSize:30,fontWeight:700,letterSpacing:-0.5,color:C.text}}>Athlete</div>
+          <div style={{fontSize:15,color:C.sub,marginTop:4}}>Il tuo tracker personale</div>
         </div>
         <div style={{background:C.bg1,border:`1px solid ${C.border}`,borderRadius:24,padding:28,boxShadow:C.shadow}}>
           <Seg C={C} options={[{value:"login",label:"Accedi"},{value:"register",label:"Registrati"}]} value={isLogin?"login":"register"} onChange={v=>{setIsLogin(v==="login");setErr("");setMsg("");}}/>
           <div style={{display:"flex",flexDirection:"column",gap:12,marginTop:20}}>
             <div>
-              <div style={{fontSize:10,color:C.muted,marginBottom:4,letterSpacing:0.8,fontWeight:500}}>EMAIL</div>
+              <div style={{fontSize:12,color:C.muted,marginBottom:4,letterSpacing:0.8,fontWeight:500}}>EMAIL</div>
               <input type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="la@tuaemail.com" style={inp} onKeyDown={e=>e.key==="Enter"&&handle()}/>
             </div>
             <div>
-              <div style={{fontSize:10,color:C.muted,marginBottom:4,letterSpacing:0.8,fontWeight:500}}>PASSWORD</div>
+              <div style={{fontSize:12,color:C.muted,marginBottom:4,letterSpacing:0.8,fontWeight:500}}>PASSWORD</div>
               <input type="password" value={password} onChange={e=>setPassword(e.target.value)} placeholder="••••••••" style={inp} onKeyDown={e=>e.key==="Enter"&&handle()}/>
             </div>
             {isLogin&&(
@@ -157,13 +157,13 @@ function AuthScreen({C}){
                 <div style={{width:20,height:20,borderRadius:6,border:`1.5px solid ${remember?C.blue:C.border}`,background:remember?C.blue:"transparent",display:"flex",alignItems:"center",justifyContent:"center",transition:"all 0.2s",flexShrink:0}}>
                   {remember&&<svg width="11" height="11" viewBox="0 0 12 12" fill="none"><polyline points="2,6 5,9 10,3" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>}
                 </div>
-                <span style={{fontSize:13,color:C.sub,userSelect:"none"}}>Rimani connesso</span>
+                <span style={{fontSize:15,color:C.sub,userSelect:"none"}}>Rimani connesso</span>
               </div>
             )}
-            {err&&<div style={{fontSize:12,color:C.red,padding:"8px 12px",background:`${C.red}12`,borderRadius:8}}>{err}</div>}
-            {msg&&<div style={{fontSize:12,color:C.green,padding:"8px 12px",background:`${C.green}12`,borderRadius:8}}>{msg}</div>}
+            {err&&<div style={{fontSize:14,color:C.red,padding:"8px 12px",background:`${C.red}12`,borderRadius:8}}>{err}</div>}
+            {msg&&<div style={{fontSize:14,color:C.green,padding:"8px 12px",background:`${C.green}12`,borderRadius:8}}>{msg}</div>}
             <button onClick={handle} disabled={loading}
-              style={{width:"100%",padding:13,background:`linear-gradient(135deg,${C.blue},${C.indigo})`,border:"none",borderRadius:12,color:"#fff",fontSize:14,fontWeight:600,cursor:loading?"default":"pointer",fontFamily:C.f,opacity:loading?0.7:1,marginTop:4}}>
+              style={{width:"100%",padding:13,background:`linear-gradient(135deg,${C.blue},${C.indigo})`,border:"none",borderRadius:12,color:"#fff",fontSize:16,fontWeight:600,cursor:loading?"default":"pointer",fontFamily:C.f,opacity:loading?0.7:1,marginTop:4}}>
               {loading?"...":(isLogin?"Accedi":"Registrati")}
             </button>
           </div>
@@ -405,12 +405,12 @@ function MealPlan({C,inp,sb,user,mealPlanOn,setMealPlanOn,mealPlanOnId,setMealPl
 
       {meals.length>0&&(
         <div style={{background:C.bg1,border:`1px solid ${C.borderHi}`,borderRadius:20,padding:16}}>
-          <div style={{fontSize:12,color:C.sub,marginBottom:10,fontWeight:500}}>Totale giornata</div>
+          <div style={{fontSize:14,color:C.sub,marginBottom:10,fontWeight:500}}>Totale giornata</div>
           <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8}}>
             {[["Kcal",Math.round(dayTotals.cal),C.blue],["Prot",Math.round(dayTotals.prot)+"g",C.green],["Carb",Math.round(dayTotals.carb)+"g",C.orange],["Gras",Math.round(dayTotals.fat)+"g",C.purple]].map(([l,v,color])=>(
               <div key={l} style={{textAlign:"center"}}>
-                <div style={{fontSize:16,fontWeight:700,color}}>{v}</div>
-                <div style={{fontSize:10,color:C.muted,marginTop:2}}>{l}</div>
+                <div style={{fontSize:18,fontWeight:700,color}}>{v}</div>
+                <div style={{fontSize:12,color:C.muted,marginTop:2}}>{l}</div>
               </div>
             ))}
           </div>
@@ -427,38 +427,38 @@ function MealPlan({C,inp,sb,user,mealPlanOn,setMealPlanOn,mealPlanOnId,setMealPl
                 <input autoFocus defaultValue={meal.name}
                   onBlur={e=>{updateMealName(mealIdx,e.target.value||meal.name);setRenamingMeal(null);}}
                   onKeyDown={e=>{if(e.key==="Enter"){updateMealName(mealIdx,e.target.value||meal.name);setRenamingMeal(null);}}}
-                  style={{...inp,fontSize:15,fontWeight:700,flex:1,padding:"6px 10px"}}/>
+                  style={{...inp,fontSize:17,fontWeight:700,flex:1,padding:"6px 10px"}}/>
               ):(
                 <div style={{display:"flex",alignItems:"center",gap:8,flex:1,minWidth:0}}>
-                  <span style={{fontSize:15,fontWeight:700,color:C.text,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{meal.name}</span>
+                  <span style={{fontSize:17,fontWeight:700,color:C.text,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{meal.name}</span>
                   <button onClick={()=>setRenamingMeal(mealIdx)} style={{background:"none",border:"none",color:C.muted,cursor:"pointer",padding:0,flexShrink:0}} title="Rinomina">
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                   </button>
                 </div>
               )}
-              <button onClick={()=>removeMeal(mealIdx)} style={{background:"none",border:"none",color:C.muted,fontSize:18,cursor:"pointer",lineHeight:1,flexShrink:0}}>×</button>
+              <button onClick={()=>removeMeal(mealIdx)} style={{background:"none",border:"none",color:C.muted,fontSize:20,cursor:"pointer",lineHeight:1,flexShrink:0}}>×</button>
             </div>
 
             {meal.foods?.map((food,foodIdx)=>(
               <div key={foodIdx} style={{padding:"10px 0",borderBottom:`1px solid ${C.border}`}}>
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:6}}>
                   <div style={{flex:1,minWidth:0}}>
-                    <div style={{fontSize:13,fontWeight:500,color:C.text,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{food.name}</div>
-                    {food.brand&&<div style={{fontSize:10,color:C.muted}}>{food.brand}</div>}
+                    <div style={{fontSize:15,fontWeight:500,color:C.text,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{food.name}</div>
+                    {food.brand&&<div style={{fontSize:12,color:C.muted}}>{food.brand}</div>}
                   </div>
-                  <button onClick={()=>removeFood(mealIdx,foodIdx)} style={{background:"none",border:"none",color:C.muted,fontSize:16,cursor:"pointer",marginLeft:8,flexShrink:0}}>×</button>
+                  <button onClick={()=>removeFood(mealIdx,foodIdx)} style={{background:"none",border:"none",color:C.muted,fontSize:18,cursor:"pointer",marginLeft:8,flexShrink:0}}>×</button>
                 </div>
                 <div style={{display:"flex",alignItems:"center",gap:10,flexWrap:"wrap"}}>
                   <div style={{display:"flex",alignItems:"center",gap:4}}>
                     <input type="number" defaultValue={food.qty} onBlur={e=>updateQty(mealIdx,foodIdx,+e.target.value||100)}
-                      style={{...inp,width:70,padding:"5px 8px",fontSize:12,textAlign:"center"}}/>
-                    <span style={{fontSize:11,color:C.muted}}>g</span>
+                      style={{...inp,width:70,padding:"5px 8px",fontSize:14,textAlign:"center"}}/>
+                    <span style={{fontSize:13,color:C.muted}}>g</span>
                   </div>
                   <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
-                    <span style={{fontSize:11,color:C.blue,fontWeight:500}}>{food.cal} kcal</span>
-                    <span style={{fontSize:11,color:C.green}}>P {food.prot}g</span>
-                    <span style={{fontSize:11,color:C.orange}}>C {food.carb}g</span>
-                    <span style={{fontSize:11,color:C.purple}}>G {food.fat}g</span>
+                    <span style={{fontSize:13,color:C.blue,fontWeight:500}}>{food.cal} kcal</span>
+                    <span style={{fontSize:13,color:C.green}}>P {food.prot}g</span>
+                    <span style={{fontSize:13,color:C.orange}}>C {food.carb}g</span>
+                    <span style={{fontSize:13,color:C.purple}}>G {food.fat}g</span>
                   </div>
                 </div>
               </div>
@@ -466,11 +466,11 @@ function MealPlan({C,inp,sb,user,mealPlanOn,setMealPlanOn,mealPlanOnId,setMealPl
 
             {(meal.foods?.length||0)>0&&(
               <div style={{display:"flex",gap:10,marginTop:10,padding:"8px 10px",background:C.bg2,borderRadius:10}}>
-                <span style={{fontSize:11,color:C.muted,fontWeight:500}}>Tot:</span>
-                <span style={{fontSize:11,color:C.blue,fontWeight:600}}>{Math.round(mealTotals.cal)} kcal</span>
-                <span style={{fontSize:11,color:C.green}}>P {Math.round(mealTotals.prot)}g</span>
-                <span style={{fontSize:11,color:C.orange}}>C {Math.round(mealTotals.carb)}g</span>
-                <span style={{fontSize:11,color:C.purple}}>G {Math.round(mealTotals.fat)}g</span>
+                <span style={{fontSize:13,color:C.muted,fontWeight:500}}>Tot:</span>
+                <span style={{fontSize:13,color:C.blue,fontWeight:600}}>{Math.round(mealTotals.cal)} kcal</span>
+                <span style={{fontSize:13,color:C.green}}>P {Math.round(mealTotals.prot)}g</span>
+                <span style={{fontSize:13,color:C.orange}}>C {Math.round(mealTotals.carb)}g</span>
+                <span style={{fontSize:13,color:C.purple}}>G {Math.round(mealTotals.fat)}g</span>
               </div>
             )}
 
@@ -480,7 +480,7 @@ function MealPlan({C,inp,sb,user,mealPlanOn,setMealPlanOn,mealPlanOnId,setMealPl
                 <div style={{display:"flex",background:C.bg3,borderRadius:12,padding:3,gap:2,marginBottom:12}}>
                   {[["cerca","Cerca"],["miei","I miei"],["recenti","Recenti"],["barcode","Barcode"]].map(([v,l])=>(
                     <button key={v} onClick={()=>{setSearchTab(v);setSearchResults([]);setSearch("");setScannerMsg("");setScannerActive(false);}}
-                      style={{flex:1,padding:"9px 0",border:"none",borderRadius:9,background:searchTab===v?C.bg1:"transparent",color:searchTab===v?C.text:C.sub,fontSize:12,fontWeight:searchTab===v?600:400,cursor:"pointer",fontFamily:C.f,transition:"all 0.15s"}}>
+                      style={{flex:1,padding:"9px 0",border:"none",borderRadius:9,background:searchTab===v?C.bg1:"transparent",color:searchTab===v?C.text:C.sub,fontSize:14,fontWeight:searchTab===v?600:400,cursor:"pointer",fontFamily:C.f,transition:"all 0.15s"}}>
                       {l}
                     </button>
                   ))}
@@ -490,12 +490,12 @@ function MealPlan({C,inp,sb,user,mealPlanOn,setMealPlanOn,mealPlanOnId,setMealPl
                   <>
                     <div style={{display:"flex",gap:8,marginBottom:10}}>
                       <input value={search} onChange={e=>setSearch(e.target.value)} onKeyDown={e=>e.key==="Enter"&&searchFood(search)}
-                        placeholder="Es: Fage, riso, pasta barilla…" style={{...inp,flex:1,fontSize:14}}/>
-                      <button onClick={()=>searchFood(search)} style={{padding:"0 16px",background:C.blue,border:"none",borderRadius:12,color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:C.f,flexShrink:0}}>
+                        placeholder="Es: Fage, riso, pasta barilla…" style={{...inp,flex:1,fontSize:16}}/>
+                      <button onClick={()=>searchFood(search)} style={{padding:"0 16px",background:C.blue,border:"none",borderRadius:12,color:"#fff",fontSize:15,fontWeight:600,cursor:"pointer",fontFamily:C.f,flexShrink:0}}>
                         {searching?"…":"Cerca"}
                       </button>
                       <button onClick={()=>{setAddingTo(null);setSearch("");setSearchResults([]);}}
-                        style={{padding:"0 12px",background:C.bg3,border:`1px solid ${C.border}`,borderRadius:12,color:C.sub,fontSize:13,cursor:"pointer",fontFamily:C.f}}>✕</button>
+                        style={{padding:"0 12px",background:C.bg3,border:`1px solid ${C.border}`,borderRadius:12,color:C.sub,fontSize:15,cursor:"pointer",fontFamily:C.f}}>✕</button>
                     </div>
                     {searchResults.length>0&&(
                       <div style={{background:C.bg2,border:`1px solid ${C.border}`,borderRadius:14,overflow:"hidden",maxHeight:360,overflowY:"auto"}}>
@@ -504,19 +504,19 @@ function MealPlan({C,inp,sb,user,mealPlanOn,setMealPlanOn,mealPlanOnId,setMealPl
                             <div onClick={()=>addFood(r,mealIdx,100)} style={{flex:1,cursor:"pointer",minWidth:0}}>
                               <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:4}}>
                                 <div style={{flex:1,minWidth:0}}>
-                                  <div style={{fontSize:13,fontWeight:600,color:C.text,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{r.name}</div>
+                                  <div style={{fontSize:15,fontWeight:600,color:C.text,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{r.name}</div>
                                   <div style={{display:"flex",gap:5,alignItems:"center",marginTop:3}}>
-                                    {r.brand&&<span style={{fontSize:11,color:C.muted}}>{r.brand}</span>}
-                                    <span style={{fontSize:10,background:`${sourceColor(r.source)}14`,color:sourceColor(r.source),borderRadius:4,padding:"1px 6px",fontWeight:500}}>{r.source}</span>
+                                    {r.brand&&<span style={{fontSize:13,color:C.muted}}>{r.brand}</span>}
+                                    <span style={{fontSize:12,background:`${sourceColor(r.source)}14`,color:sourceColor(r.source),borderRadius:4,padding:"1px 6px",fontWeight:500}}>{r.source}</span>
                                   </div>
                                 </div>
-                                <span style={{fontSize:13,color:C.blue,fontWeight:700,flexShrink:0,marginLeft:10}}>{r.cal} kcal</span>
+                                <span style={{fontSize:15,color:C.blue,fontWeight:700,flexShrink:0,marginLeft:10}}>{r.cal} kcal</span>
                               </div>
                               <div style={{display:"flex",gap:10}}>
-                                <span style={{fontSize:11,color:C.green}}>P {r.prot}g</span>
-                                <span style={{fontSize:11,color:C.orange}}>C {r.carb}g</span>
-                                <span style={{fontSize:11,color:C.purple}}>G {r.fat}g</span>
-                                <span style={{fontSize:11,color:C.muted}}>per 100g</span>
+                                <span style={{fontSize:13,color:C.green}}>P {r.prot}g</span>
+                                <span style={{fontSize:13,color:C.orange}}>C {r.carb}g</span>
+                                <span style={{fontSize:13,color:C.purple}}>G {r.fat}g</span>
+                                <span style={{fontSize:13,color:C.muted}}>per 100g</span>
                               </div>
                             </div>
                             <button onClick={async(e)=>{
@@ -531,7 +531,7 @@ function MealPlan({C,inp,sb,user,mealPlanOn,setMealPlanOn,mealPlanOnId,setMealPl
                               }
                             }}
                               title="Salva nei miei alimenti"
-                              style={{background:"none",border:"none",cursor:"pointer",color:myFoods.some(f=>f.name===r.name)?C.red:C.muted,fontSize:20,flexShrink:0,padding:"4px"}}>
+                              style={{background:"none",border:"none",cursor:"pointer",color:myFoods.some(f=>f.name===r.name)?C.red:C.muted,fontSize:22,flexShrink:0,padding:"4px"}}>
                               {myFoods.some(f=>f.name===r.name)?"♥":"♡"}
                             </button>
                           </div>
@@ -539,7 +539,7 @@ function MealPlan({C,inp,sb,user,mealPlanOn,setMealPlanOn,mealPlanOnId,setMealPl
                       </div>
                     )}
                     {searchResults.length===0&&!searching&&search&&(
-                      <div style={{fontSize:13,color:C.muted,textAlign:"center",padding:14}}>Nessun risultato</div>
+                      <div style={{fontSize:15,color:C.muted,textAlign:"center",padding:14}}>Nessun risultato</div>
                     )}
                   </>
                 )}
@@ -549,7 +549,7 @@ function MealPlan({C,inp,sb,user,mealPlanOn,setMealPlanOn,mealPlanOnId,setMealPl
                   return(
                     <div>
                       {list.length===0?(
-                        <div style={{fontSize:13,color:C.muted,textAlign:"center",padding:18}}>
+                        <div style={{fontSize:15,color:C.muted,textAlign:"center",padding:18}}>
                           {searchTab==="miei"?"Nessun alimento salvato — aggiungi con ♡ dalla ricerca":"Nessun alimento usato di recente"}
                         </div>
                       ):(
@@ -558,46 +558,46 @@ function MealPlan({C,inp,sb,user,mealPlanOn,setMealPlanOn,mealPlanOnId,setMealPl
                             <div key={fi} style={{borderBottom:fi<list.length-1?`1px solid ${C.border}`:"none"}}>
                               {editingFood===f.dbId?(
                                 <div style={{padding:"12px 16px"}}>
-                                  <div style={{fontSize:12,fontWeight:600,color:C.text,marginBottom:10}}>Modifica alimento</div>
+                                  <div style={{fontSize:14,fontWeight:600,color:C.text,marginBottom:10}}>Modifica alimento</div>
                                   <div style={{display:"flex",flexDirection:"column",gap:8}}>
-                                    <input value={editFoodData.name||""} onChange={e=>setEditFoodData(p=>({...p,name:e.target.value}))} placeholder="Nome" style={{...inp,fontSize:13}}/>
-                                    <input value={editFoodData.brand||""} onChange={e=>setEditFoodData(p=>({...p,brand:e.target.value}))} placeholder="Marca" style={{...inp,fontSize:13}}/>
+                                    <input value={editFoodData.name||""} onChange={e=>setEditFoodData(p=>({...p,name:e.target.value}))} placeholder="Nome" style={{...inp,fontSize:15}}/>
+                                    <input value={editFoodData.brand||""} onChange={e=>setEditFoodData(p=>({...p,brand:e.target.value}))} placeholder="Marca" style={{...inp,fontSize:15}}/>
                                     <div style={{display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:8}}>
                                       {[["cal","kcal"],["prot","g"],["carb","g"],["fat","g"]].map(([k,u])=>(
                                         <div key={k} style={{position:"relative"}}>
                                           <input type="number" value={editFoodData[k]||""} onChange={e=>setEditFoodData(p=>({...p,[k]:e.target.value}))}
                                             placeholder={k==="cal"?"Calorie":k==="prot"?"Proteine":k==="carb"?"Carboidrati":"Grassi"}
-                                            style={{...inp,fontSize:13,paddingRight:28}}/>
-                                          <span style={{position:"absolute",right:8,top:"50%",transform:"translateY(-50%)",fontSize:10,color:C.muted}}>{u}</span>
+                                            style={{...inp,fontSize:15,paddingRight:28}}/>
+                                          <span style={{position:"absolute",right:8,top:"50%",transform:"translateY(-50%)",fontSize:12,color:C.muted}}>{u}</span>
                                         </div>
                                       ))}
                                     </div>
                                     <div style={{display:"flex",gap:8}}>
                                       <button onClick={()=>{setEditingFood(null);setEditFoodData({});}}
-                                        style={{flex:1,padding:9,background:C.bg3,border:`1px solid ${C.border}`,borderRadius:10,color:C.sub,fontSize:13,cursor:"pointer",fontFamily:C.f}}>Annulla</button>
+                                        style={{flex:1,padding:9,background:C.bg3,border:`1px solid ${C.border}`,borderRadius:10,color:C.sub,fontSize:15,cursor:"pointer",fontFamily:C.f}}>Annulla</button>
                                       <button onClick={updateMyFood}
-                                        style={{flex:2,padding:9,background:C.blue,border:"none",borderRadius:10,color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:C.f}}>Salva modifiche</button>
+                                        style={{flex:2,padding:9,background:C.blue,border:"none",borderRadius:10,color:"#fff",fontSize:15,fontWeight:600,cursor:"pointer",fontFamily:C.f}}>Salva modifiche</button>
                                     </div>
                                   </div>
                                 </div>
                               ):(
                                 <div style={{padding:"12px 16px",display:"flex",justifyContent:"space-between",alignItems:"center",gap:10}}>
                                   <div onClick={()=>addFood(f,mealIdx,100)} style={{flex:1,cursor:"pointer",minWidth:0}}>
-                                    <div style={{fontSize:13,fontWeight:600,color:C.text,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{f.name}</div>
-                                    {f.brand&&<div style={{fontSize:11,color:C.muted,marginBottom:3}}>{f.brand}</div>}
+                                    <div style={{fontSize:15,fontWeight:600,color:C.text,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{f.name}</div>
+                                    {f.brand&&<div style={{fontSize:13,color:C.muted,marginBottom:3}}>{f.brand}</div>}
                                     <div style={{display:"flex",gap:10,marginTop:3}}>
-                                      <span style={{fontSize:12,color:C.blue,fontWeight:600}}>{f.cal} kcal</span>
-                                      <span style={{fontSize:11,color:C.green}}>P {f.prot}g</span>
-                                      <span style={{fontSize:11,color:C.orange}}>C {f.carb}g</span>
-                                      <span style={{fontSize:11,color:C.purple}}>G {f.fat}g</span>
-                                      <span style={{fontSize:11,color:C.muted}}>per 100g</span>
+                                      <span style={{fontSize:14,color:C.blue,fontWeight:600}}>{f.cal} kcal</span>
+                                      <span style={{fontSize:13,color:C.green}}>P {f.prot}g</span>
+                                      <span style={{fontSize:13,color:C.orange}}>C {f.carb}g</span>
+                                      <span style={{fontSize:13,color:C.purple}}>G {f.fat}g</span>
+                                      <span style={{fontSize:13,color:C.muted}}>per 100g</span>
                                     </div>
                                   </div>
                                   {searchTab==="miei"&&(
                                     <div style={{display:"flex",gap:4,flexShrink:0}}>
                                       <button onClick={()=>{setEditingFood(f.dbId);setEditFoodData({name:f.name,brand:f.brand||"",cal:f.cal,prot:f.prot,carb:f.carb,fat:f.fat});}}
-                                        style={{background:"none",border:"none",color:C.blue,fontSize:14,cursor:"pointer",padding:"4px"}}>✎</button>
-                                      <button onClick={()=>deleteMyFood(f.dbId)} style={{background:"none",border:"none",color:C.muted,fontSize:18,cursor:"pointer",padding:"4px"}}>×</button>
+                                        style={{background:"none",border:"none",color:C.blue,fontSize:16,cursor:"pointer",padding:"4px"}}>✎</button>
+                                      <button onClick={()=>deleteMyFood(f.dbId)} style={{background:"none",border:"none",color:C.muted,fontSize:20,cursor:"pointer",padding:"4px"}}>×</button>
                                     </div>
                                   )}
                                 </div>
@@ -608,29 +608,29 @@ function MealPlan({C,inp,sb,user,mealPlanOn,setMealPlanOn,mealPlanOnId,setMealPl
                       )}
                       {searchTab==="miei"&&(!showAddFood?(
                         <button onClick={()=>setShowAddFood(true)}
-                          style={{width:"100%",padding:"10px 0",background:`${C.purple}10`,border:`1px dashed ${C.purple}40`,borderRadius:12,color:C.purple,fontSize:13,fontWeight:500,cursor:"pointer",fontFamily:C.f}}>
+                          style={{width:"100%",padding:"10px 0",background:`${C.purple}10`,border:`1px dashed ${C.purple}40`,borderRadius:12,color:C.purple,fontSize:15,fontWeight:500,cursor:"pointer",fontFamily:C.f}}>
                           + Nuovo alimento
                         </button>
                       ):(
                         <div style={{background:C.bg2,border:`1px solid ${C.border}`,borderRadius:14,padding:16}}>
-                          <div style={{fontSize:13,fontWeight:600,color:C.text,marginBottom:12}}>Nuovo alimento</div>
+                          <div style={{fontSize:15,fontWeight:600,color:C.text,marginBottom:12}}>Nuovo alimento</div>
                           <div style={{display:"flex",flexDirection:"column",gap:10}}>
-                            <input placeholder="Nome *" value={newFood.name} onChange={e=>setNewFood(p=>({...p,name:e.target.value}))} style={{...inp,fontSize:13}}/>
-                            <input placeholder="Marca (opzionale)" value={newFood.brand} onChange={e=>setNewFood(p=>({...p,brand:e.target.value}))} style={{...inp,fontSize:13}}/>
+                            <input placeholder="Nome *" value={newFood.name} onChange={e=>setNewFood(p=>({...p,name:e.target.value}))} style={{...inp,fontSize:15}}/>
+                            <input placeholder="Marca (opzionale)" value={newFood.brand} onChange={e=>setNewFood(p=>({...p,brand:e.target.value}))} style={{...inp,fontSize:15}}/>
                             <div style={{display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:10}}>
                               {[["Calorie *","cal","kcal"],["Proteine","prot","g"],["Carboidrati","carb","g"],["Grassi","fat","g"]].map(([l,k,u])=>(
                                 <div key={k} style={{position:"relative"}}>
                                   <input type="number" placeholder={l} value={newFood[k]} onChange={e=>setNewFood(p=>({...p,[k]:e.target.value}))}
-                                    style={{...inp,fontSize:13,paddingRight:32}}/>
-                                  <span style={{position:"absolute",right:10,top:"50%",transform:"translateY(-50%)",fontSize:11,color:C.muted}}>{u}</span>
+                                    style={{...inp,fontSize:15,paddingRight:32}}/>
+                                  <span style={{position:"absolute",right:10,top:"50%",transform:"translateY(-50%)",fontSize:13,color:C.muted}}>{u}</span>
                                 </div>
                               ))}
                             </div>
                             <div style={{display:"flex",gap:10}}>
                               <button onClick={()=>{setShowAddFood(false);setNewFood({name:"",brand:"",cal:"",prot:"",carb:"",fat:"",});}}
-                                style={{flex:1,padding:10,background:C.bg3,border:`1px solid ${C.border}`,borderRadius:10,color:C.sub,fontSize:13,cursor:"pointer",fontFamily:C.f}}>Annulla</button>
+                                style={{flex:1,padding:10,background:C.bg3,border:`1px solid ${C.border}`,borderRadius:10,color:C.sub,fontSize:15,cursor:"pointer",fontFamily:C.f}}>Annulla</button>
                               <button onClick={saveMyFood} disabled={savingFood||!newFood.name||!newFood.cal}
-                                style={{flex:2,padding:10,background:C.purple,border:"none",borderRadius:10,color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:C.f,opacity:savingFood?0.7:1}}>
+                                style={{flex:2,padding:10,background:C.purple,border:"none",borderRadius:10,color:"#fff",fontSize:15,fontWeight:600,cursor:"pointer",fontFamily:C.f,opacity:savingFood?0.7:1}}>
                                 {savingFood?"…":"Salva"}
                               </button>
                             </div>
@@ -646,28 +646,28 @@ function MealPlan({C,inp,sb,user,mealPlanOn,setMealPlanOn,mealPlanOnId,setMealPl
                     <div id="qr-reader" style={{width:"100%",borderRadius:12,overflow:"hidden",marginBottom:8}}/>
                     {!scannerActive&&(
                       <button onClick={startScanner}
-                        style={{width:"100%",padding:11,background:`linear-gradient(135deg,${C.teal},${C.blue})`,border:"none",borderRadius:12,color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:C.f,marginBottom:8}}>
+                        style={{width:"100%",padding:11,background:`linear-gradient(135deg,${C.teal},${C.blue})`,border:"none",borderRadius:12,color:"#fff",fontSize:15,fontWeight:600,cursor:"pointer",fontFamily:C.f,marginBottom:8}}>
                         📷 Avvia scanner
                       </button>
                     )}
-                    {scannerMsg&&<div style={{fontSize:12,color:C.sub,textAlign:"center",marginBottom:8}}>{scannerMsg}</div>}
+                    {scannerMsg&&<div style={{fontSize:14,color:C.sub,textAlign:"center",marginBottom:8}}>{scannerMsg}</div>}
                     <div style={{display:"flex",gap:8,marginBottom:8}}>
                       <input placeholder="Oppure inserisci barcode manualmente…" id="manual-barcode"
-                        style={{...inp,flex:1,fontSize:12}} onKeyDown={e=>{if(e.key==="Enter"&&e.target.value){searchBarcode(e.target.value);e.target.value="";}}}/>
+                        style={{...inp,flex:1,fontSize:14}} onKeyDown={e=>{if(e.key==="Enter"&&e.target.value){searchBarcode(e.target.value);e.target.value="";}}}/>
                       <button onClick={()=>{const v=document.getElementById("manual-barcode")?.value;if(v){searchBarcode(v);document.getElementById("manual-barcode").value="";}}}
-                        style={{padding:"0 12px",background:C.teal,border:"none",borderRadius:12,color:"#fff",fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:C.f,flexShrink:0}}>Cerca</button>
+                        style={{padding:"0 12px",background:C.teal,border:"none",borderRadius:12,color:"#fff",fontSize:14,fontWeight:600,cursor:"pointer",fontFamily:C.f,flexShrink:0}}>Cerca</button>
                     </div>
                     {searchResults.length>0&&(
                       <div style={{background:C.bg2,border:`1px solid ${C.border}`,borderRadius:12,overflow:"hidden"}}>
                         {searchResults.map((r,ri)=>(
                           <div key={ri} onClick={()=>addFood(r,mealIdx,100)} style={{padding:"12px 14px",cursor:"pointer"}}>
-                            <div style={{fontSize:13,fontWeight:600,color:C.text,marginBottom:4}}>{r.name}</div>
-                            {r.brand&&<div style={{fontSize:11,color:C.muted,marginBottom:6}}>{r.brand}</div>}
+                            <div style={{fontSize:15,fontWeight:600,color:C.text,marginBottom:4}}>{r.name}</div>
+                            {r.brand&&<div style={{fontSize:13,color:C.muted,marginBottom:6}}>{r.brand}</div>}
                             <div style={{display:"flex",gap:10}}>
-                              <span style={{fontSize:12,color:C.blue,fontWeight:600}}>{r.cal} kcal</span>
-                              <span style={{fontSize:12,color:C.green}}>P {r.prot}g</span>
-                              <span style={{fontSize:12,color:C.orange}}>C {r.carb}g</span>
-                              <span style={{fontSize:12,color:C.purple}}>G {r.fat}g</span>
+                              <span style={{fontSize:14,color:C.blue,fontWeight:600}}>{r.cal} kcal</span>
+                              <span style={{fontSize:14,color:C.green}}>P {r.prot}g</span>
+                              <span style={{fontSize:14,color:C.orange}}>C {r.carb}g</span>
+                              <span style={{fontSize:14,color:C.purple}}>G {r.fat}g</span>
                             </div>
                           </div>
                         ))}
@@ -678,7 +678,7 @@ function MealPlan({C,inp,sb,user,mealPlanOn,setMealPlanOn,mealPlanOnId,setMealPl
               </div>
             ):(
               <button onClick={()=>{setAddingTo(mealIdx);setSearchTab("cerca");setSearchResults([]);setSearch("");}}
-                style={{marginTop:12,width:"100%",padding:"8px 0",background:`${C.blue}10`,border:`1px dashed ${C.blue}40`,borderRadius:10,color:C.blue,fontSize:12,fontWeight:500,cursor:"pointer",fontFamily:C.f}}>
+                style={{marginTop:12,width:"100%",padding:"8px 0",background:`${C.blue}10`,border:`1px dashed ${C.blue}40`,borderRadius:10,color:C.blue,fontSize:14,fontWeight:500,cursor:"pointer",fontFamily:C.f}}>
                 + Aggiungi alimento
               </button>
             )}
@@ -687,13 +687,13 @@ function MealPlan({C,inp,sb,user,mealPlanOn,setMealPlanOn,mealPlanOnId,setMealPl
       })}
 
       <button onClick={addMeal}
-        style={{width:"100%",padding:13,background:C.bg1,border:`1.5px dashed ${C.border}`,borderRadius:14,color:C.sub,fontSize:13,fontWeight:500,cursor:"pointer",fontFamily:C.f}}>
+        style={{width:"100%",padding:13,background:C.bg1,border:`1.5px dashed ${C.border}`,borderRadius:14,color:C.sub,fontSize:15,fontWeight:500,cursor:"pointer",fontFamily:C.f}}>
         + Aggiungi pasto
       </button>
 
       {meals.length>0&&(
         <button onClick={saveMealPlan} disabled={saving}
-          style={{width:"100%",padding:13,background:`linear-gradient(135deg,${C.blue},${C.indigo})`,border:"none",borderRadius:14,color:"#fff",fontSize:14,fontWeight:600,cursor:"pointer",fontFamily:C.f,opacity:saving?0.7:1,boxShadow:`0 4px 16px ${C.blue}30`}}>
+          style={{width:"100%",padding:13,background:`linear-gradient(135deg,${C.blue},${C.indigo})`,border:"none",borderRadius:14,color:"#fff",fontSize:16,fontWeight:600,cursor:"pointer",fontFamily:C.f,opacity:saving?0.7:1,boxShadow:`0 4px 16px ${C.blue}30`}}>
           {saving?"Salvataggio…":"Salva meal plan"}
         </button>
       )}
@@ -742,16 +742,16 @@ function PlanningSetup({C,inp,lastW,plan,todayStr,fmtShort,setPlanning,setPlanni
 
   return(
     <>
-      <div style={{fontSize:16,fontWeight:700,color:C.text,marginBottom:4}}>Nuovo piano</div>
-      <div style={{fontSize:12,color:C.sub,marginBottom:18}}>Imposta le basi — potrai modificare ogni settimana dopo</div>
+      <div style={{fontSize:18,fontWeight:700,color:C.text,marginBottom:4}}>Nuovo piano</div>
+      <div style={{fontSize:14,color:C.sub,marginBottom:18}}>Imposta le basi — potrai modificare ogni settimana dopo</div>
       <Card C={C}>
-        <div style={{fontSize:12,color:C.sub,marginBottom:14,fontWeight:500}}>Tipo di piano</div>
+        <div style={{fontSize:14,color:C.sub,marginBottom:14,fontWeight:500}}>Tipo di piano</div>
         <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(120px,1fr))",gap:8}}>
           {[["cut","Cut","Deficit calorico",C.orange],["bulk","Bulk","Surplus calorico",C.green],["recomp","Recomp","Mantenimento+",C.blue],["maint","Mantenimento","Calorie stabili",C.teal]].map(([v,l,s,color])=>(
             <button key={v} onClick={()=>setPType(v)}
               style={{padding:"14px 10px",background:pType===v?`${color}14`:C.bg2,border:`1.5px solid ${pType===v?color:C.border}`,borderRadius:14,cursor:"pointer",textAlign:"center",fontFamily:C.f,transition:"all 0.2s"}}>
-              <div style={{fontSize:13,fontWeight:700,color:pType===v?color:C.text,marginBottom:3}}>{l}</div>
-              <div style={{fontSize:10,color:C.muted}}>{s}</div>
+              <div style={{fontSize:15,fontWeight:700,color:pType===v?color:C.text,marginBottom:3}}>{l}</div>
+              <div style={{fontSize:12,color:C.muted}}>{s}</div>
             </button>
           ))}
         </div>
@@ -759,34 +759,34 @@ function PlanningSetup({C,inp,lastW,plan,todayStr,fmtShort,setPlanning,setPlanni
       <Card C={C}>
         <div style={{display:"flex",flexDirection:"column",gap:12}}>
           <div>
-            <div style={{fontSize:12,color:C.sub,marginBottom:6,fontWeight:500}}>Nome piano (opzionale)</div>
+            <div style={{fontSize:14,color:C.sub,marginBottom:6,fontWeight:500}}>Nome piano (opzionale)</div>
             <input value={pName} onChange={e=>setPName(e.target.value)} placeholder="Es: Cut estate 2026" style={inp}/>
           </div>
           <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(140px,1fr))",gap:10}}>
             <div>
-              <div style={{fontSize:12,color:C.sub,marginBottom:6,fontWeight:500}}>Data inizio</div>
+              <div style={{fontSize:14,color:C.sub,marginBottom:6,fontWeight:500}}>Data inizio</div>
               <input type="date" value={pStart} onChange={e=>setPStart(e.target.value)} style={inp}/>
             </div>
             <div>
-              <div style={{fontSize:12,color:C.sub,marginBottom:6,fontWeight:500}}>Data fine</div>
+              <div style={{fontSize:14,color:C.sub,marginBottom:6,fontWeight:500}}>Data fine</div>
               <input type="date" value={pEnd} onChange={e=>setPEnd(e.target.value)} style={inp}/>
             </div>
           </div>
           <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(140px,1fr))",gap:10}}>
             <div>
-              <div style={{fontSize:12,color:C.sub,marginBottom:6,fontWeight:500}}>Peso iniziale (kg)</div>
+              <div style={{fontSize:14,color:C.sub,marginBottom:6,fontWeight:500}}>Peso iniziale (kg)</div>
               <input type="number" step="0.1" value={pWStart} onChange={e=>setPWStart(e.target.value)} style={inp}/>
             </div>
             <div>
-              <div style={{fontSize:12,color:C.sub,marginBottom:6,fontWeight:500}}>Peso target (kg)</div>
+              <div style={{fontSize:14,color:C.sub,marginBottom:6,fontWeight:500}}>Peso target (kg)</div>
               <input type="number" step="0.1" value={pWEnd} onChange={e=>setPWEnd(e.target.value)} style={inp}/>
             </div>
           </div>
         </div>
       </Card>
-      <div style={{fontSize:11,color:C.muted,textAlign:"center"}}>{numW} settimane · {numW*7} giorni</div>
+      <div style={{fontSize:13,color:C.muted,textAlign:"center"}}>{numW} settimane · {numW*7} giorni</div>
       <button onClick={createPlan}
-        style={{width:"100%",padding:14,background:`linear-gradient(135deg,${C.blue},${C.indigo})`,border:"none",borderRadius:14,color:"#fff",fontSize:14,fontWeight:600,cursor:"pointer",fontFamily:C.f,boxShadow:`0 4px 16px ${C.blue}30`}}>
+        style={{width:"100%",padding:14,background:`linear-gradient(135deg,${C.blue},${C.indigo})`,border:"none",borderRadius:14,color:"#fff",fontSize:16,fontWeight:600,cursor:"pointer",fontFamily:C.f,boxShadow:`0 4px 16px ${C.blue}30`}}>
         Genera piano →
       </button>
     </>
@@ -1009,15 +1009,15 @@ export default function App(){
       dOnP,dOffP,dOnC,dOffC,dOnF,dOffF};
   });
   const weekDates=getWeekDates(weekOffset);
-  const inp={background:C.bg3,border:`1px solid ${C.border}`,borderRadius:13,color:C.text,padding:"10px 13px",fontSize:13,outline:"none",width:"100%",fontFamily:C.f,boxSizing:"border-box"};
+  const inp={background:C.bg3,border:`1px solid ${C.border}`,borderRadius:13,color:C.text,padding:"10px 13px",fontSize:15,outline:"none",width:"100%",fontFamily:C.f,boxSizing:"border-box"};
 
   const NAV=[
-    {id:"dashboard",label:"Dashboard",icon:(a)=><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={a?C.blue:C.muted} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>},
-    {id:"oggi",label:"Oggi",icon:(a)=><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={a?C.blue:C.muted} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15.5 14"/></svg>},
-    {id:"peso",label:"Peso",icon:(a)=><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={a?C.blue:C.muted} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>},
-    {id:"piano",label:"Piano",icon:(a)=><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={a?C.blue:C.muted} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>},
-    {id:"planning",label:"Planning",icon:(a)=><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={a?C.blue:C.muted} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>},
-    {id:"meal",label:"Meal Plan",icon:(a)=><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={a?C.blue:C.muted} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>},
+    {id:"dashboard",label:"Dashboard",icon:(a)=><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={a?C.blue:C.muted} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>},
+    {id:"oggi",label:"Oggi",icon:(a)=><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={a?C.blue:C.muted} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15.5 14"/></svg>},
+    {id:"peso",label:"Peso",icon:(a)=><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={a?C.blue:C.muted} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>},
+    {id:"piano",label:"Piano",icon:(a)=><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={a?C.blue:C.muted} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>},
+    {id:"planning",label:"Planning",icon:(a)=><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={a?C.blue:C.muted} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>},
+    {id:"meal",label:"Meal Plan",icon:(a)=><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={a?C.blue:C.muted} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>},
   ];
 
   if(authLoading)return(
@@ -1029,7 +1029,7 @@ export default function App(){
   if(loading)return(
     <div style={{minHeight:"100vh",background:C.bg0,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:14,fontFamily:C.f}}>
       <div style={{display:"flex",gap:6}}>{[0,1,2].map(i=><div key={i} style={{width:8,height:8,borderRadius:"50%",background:C.blue,animation:`pulse 1.1s ${i*0.18}s infinite ease-in-out`}}/>)}</div>
-      <span style={{fontSize:12,color:C.muted}}>Caricamento dati…</span>
+      <span style={{fontSize:14,color:C.muted}}>Caricamento dati…</span>
     </div>
   );
 
@@ -1037,47 +1037,50 @@ export default function App(){
     <div style={{minHeight:"100vh",background:C.bg0,color:C.text,fontFamily:C.f,paddingBottom:88,overflowX:"hidden"}}>
 
       {/* HEADER */}
-      <div style={{background:C.headerBg,backdropFilter:"blur(24px)",borderBottom:`1px solid ${C.borderHi}`,padding:"0 16px",position:"sticky",top:0,zIndex:100,height:56}}>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",maxWidth:1100,margin:"0 auto",height:"100%",gap:8}}>
+      <div style={{background:C.headerBg,backdropFilter:"blur(24px)",borderBottom:`1px solid ${C.borderHi}`,padding:"0 32px",position:"sticky",top:0,zIndex:100,height:72}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",maxWidth:1760,margin:"0 auto",height:"100%",gap:8}}>
           <div style={{display:"flex",alignItems:"center",gap:0,minWidth:0,flex:1}}>
-            <span style={{fontSize:17,fontWeight:700,letterSpacing:-0.3,color:C.text,flexShrink:0}}>Athlete</span>
-            <span style={{margin:"0 10px",color:C.muted,fontSize:18,lineHeight:1,fontWeight:200,flexShrink:0}}>|</span>
-            <span style={{fontSize:11,color:C.sub,fontWeight:400,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
+            <span style={{fontSize:24,fontWeight:700,letterSpacing:-0.3,color:C.text,flexShrink:0}}>Athlete</span>
+            <span style={{margin:"0 14px",color:C.muted,fontSize:24,lineHeight:1,fontWeight:200,flexShrink:0}}>|</span>
+            <span style={{fontSize:16,color:C.sub,fontWeight:400,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
               {new Date().toLocaleDateString("it-IT",{weekday:"long",day:"numeric",month:"long"})}
             </span>
           </div>
-          <div style={{display:"flex",gap:6,alignItems:"center",flexShrink:0}}>
-            {syncing&&<span style={{fontSize:10,color:C.muted}}>Sync…</span>}
+          <div style={{display:"flex",gap:8,alignItems:"center",flexShrink:0}}>
+            {syncing&&<span style={{fontSize:13,color:C.muted}}>Sync…</span>}
             {lastW!=null&&(
-              <div style={{background:C.bg2,border:`1px solid ${C.border}`,borderRadius:10,padding:"5px 10px",display:"flex",alignItems:"baseline",gap:3}}>
-                <span style={{fontSize:14,fontWeight:700,color:C.teal}}>{lastW}</span>
-                <span style={{fontSize:10,color:C.muted}}>kg</span>
-                {wDelta!=null&&<span style={{fontSize:10,color:wDelta<0?C.green:C.orange,marginLeft:2,fontWeight:500}}>{wDelta>0?"+":""}{wDelta}</span>}
+              <div style={{background:C.bg2,border:`1px solid ${C.border}`,borderRadius:10,padding:"6px 12px",display:"flex",alignItems:"baseline",gap:3}}>
+                <span style={{fontSize:18,fontWeight:700,color:C.teal}}>{lastW}</span>
+                <span style={{fontSize:13,color:C.muted}}>kg</span>
+                {wDelta!=null&&<span style={{fontSize:13,color:wDelta<0?C.green:C.orange,marginLeft:2,fontWeight:500}}>{wDelta>0?"+":""}{wDelta}</span>}
               </div>
             )}
-            <button onClick={()=>setIsDark(p=>!p)} style={{background:C.bg2,border:`1px solid ${C.border}`,borderRadius:10,width:32,height:32,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0}}>
-              {isDark
-                ?<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={C.sub} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
-                :<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={C.sub} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>}
+            <button onClick={()=>{const el=document.documentElement;if(!document.fullscreenElement){el.requestFullscreen?.();}else{document.exitFullscreen?.();}}} style={{background:C.bg2,border:`1px solid ${C.border}`,borderRadius:10,width:36,height:36,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0}} title="Schermo intero">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={C.sub} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></svg>
             </button>
-            <button onClick={()=>sb.auth.signOut()} style={{background:C.bg2,border:`1px solid ${C.border}`,borderRadius:10,width:32,height:32,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0}} title="Esci">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={C.sub} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            <button onClick={()=>setIsDark(p=>!p)} style={{background:C.bg2,border:`1px solid ${C.border}`,borderRadius:10,width:36,height:36,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0}}>
+              {isDark
+                ?<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={C.sub} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+                :<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={C.sub} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>}
+            </button>
+            <button onClick={()=>sb.auth.signOut()} style={{background:C.bg2,border:`1px solid ${C.border}`,borderRadius:10,width:36,height:36,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0}} title="Esci">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={C.sub} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
             </button>
           </div>
         </div>
       </div>
 
-      <div style={{maxWidth:1100,margin:"0 auto",padding:"20px 16px"}}>
-        <div style={{display:"grid",gridTemplateColumns:typeof window!=="undefined"&&window.innerWidth>=768?"220px 1fr":"1fr",gap:24,alignItems:"start"}}>
+      <div style={{maxWidth:1760,margin:"0 auto",padding:"28px 32px"}}>
+        <div style={{display:"grid",gridTemplateColumns:typeof window!=="undefined"&&window.innerWidth>=768?"260px 1fr":"1fr",gap:32,alignItems:"start"}}>
 
           {/* SIDEBAR desktop */}
           {typeof window!=="undefined"&&window.innerWidth>=768&&(
-            <div style={{position:"sticky",top:74,display:"flex",flexDirection:"column",gap:4}}>
+            <div style={{position:"sticky",top:90,display:"flex",flexDirection:"column",gap:6}}>
               {NAV.map(n=>{
                 const active=tab===n.id;
                 return(
                   <button key={n.id} onClick={()=>{setTab(n.id);if(n.id!=="oggi")setWeekOffset(0);}}
-                    style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",borderRadius:14,background:active?`${C.blue}14`:"transparent",border:`1px solid ${active?`${C.blue}28`:"transparent"}`,color:active?C.blue:C.sub,fontSize:13,fontWeight:active?600:400,cursor:"pointer",fontFamily:C.f,textAlign:"left",transition:"all 0.2s"}}>
+                    style={{display:"flex",alignItems:"center",gap:13,padding:"13px 16px",borderRadius:14,background:active?`${C.blue}14`:"transparent",border:`1px solid ${active?`${C.blue}28`:"transparent"}`,color:active?C.blue:C.sub,fontSize:17,fontWeight:active?600:500,cursor:"pointer",fontFamily:C.f,textAlign:"left",transition:"all 0.2s"}}>
                     {n.icon(active)}{n.label}
                   </button>
                 );
@@ -1100,34 +1103,34 @@ export default function App(){
               {/* Grafico media calorica settimanale */}
               <Card C={C}>
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
-                  <span style={{fontSize:13,fontWeight:600,color:C.text}}>Media calorica settimanale</span>
+                  <span style={{fontSize:15,fontWeight:600,color:C.text}}>Media calorica settimanale</span>
                   {calDelta!=null&&<Tag label={`${calDelta>0?"+":""}${calDelta} vs scorsa`} color={calDelta<0?C.green:C.orange}/>}
                 </div>
                 {weekCalChart.length>1?(
                   <ResponsiveContainer width="100%" height={160}>
                     <BarChart data={weekCalChart} barSize={24}>
                       <CartesianGrid strokeDasharray="3 3" stroke={isDark?"rgba(255,255,255,0.04)":"rgba(0,0,0,0.04)"} vertical={false}/>
-                      <XAxis dataKey="week" tick={{fill:C.muted,fontSize:10}} axisLine={false} tickLine={false}/>
-                      <YAxis tick={{fill:C.muted,fontSize:9}} axisLine={false} tickLine={false} domain={["auto","auto"]} width={36}/>
+                      <XAxis dataKey="week" tick={{fill:C.muted,fontSize:12}} axisLine={false} tickLine={false}/>
+                      <YAxis tick={{fill:C.muted,fontSize:11}} axisLine={false} tickLine={false} domain={["auto","auto"]} width={36}/>
                       <Tooltip content={<CTip C={C}/>}/>
                       <Bar dataKey="Media" fill={C.blue} radius={[6,6,0,0]}
-                        label={{position:"top",fill:C.sub,fontSize:9,formatter:v=>v?v:""}}/>
+                        label={{position:"top",fill:C.sub,fontSize:11,formatter:v=>v?v:""}}/>
                     </BarChart>
                   </ResponsiveContainer>
-                ):<div style={{fontSize:12,color:C.muted,textAlign:"center",padding:"20px 0"}}>Disponibile dopo la prima settimana</div>}
+                ):<div style={{fontSize:14,color:C.muted,textAlign:"center",padding:"20px 0"}}>Disponibile dopo la prima settimana</div>}
                 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginTop:12}}>
                   <div style={{textAlign:"center"}}>
-                    <div style={{fontSize:10,color:C.muted,marginBottom:3}}>QUESTA SETT.</div>
-                    <div style={{fontSize:15,fontWeight:600,color:C.blue}}>{thisWeek.avgCal??'—'}<span style={{fontSize:10,color:C.sub,marginLeft:2}}>kcal</span></div>
+                    <div style={{fontSize:12,color:C.muted,marginBottom:3}}>QUESTA SETT.</div>
+                    <div style={{fontSize:17,fontWeight:600,color:C.blue}}>{thisWeek.avgCal??'—'}<span style={{fontSize:12,color:C.sub,marginLeft:2}}>kcal</span></div>
                   </div>
                   <div style={{textAlign:"center"}}>
-                    <div style={{fontSize:10,color:C.muted,marginBottom:3}}>SCORSA SETT.</div>
-                    <div style={{fontSize:15,fontWeight:600,color:C.sub}}>{lastWeek.avgCal??'—'}<span style={{fontSize:10,color:C.sub,marginLeft:2}}>kcal</span></div>
+                    <div style={{fontSize:12,color:C.muted,marginBottom:3}}>SCORSA SETT.</div>
+                    <div style={{fontSize:17,fontWeight:600,color:C.sub}}>{lastWeek.avgCal??'—'}<span style={{fontSize:12,color:C.sub,marginLeft:2}}>kcal</span></div>
                   </div>
                   <div style={{textAlign:"center"}}>
-                    <div style={{fontSize:10,color:C.muted,marginBottom:3}}>DELTA</div>
-                    <div style={{fontSize:15,fontWeight:600,color:calDelta!=null?(calDelta<0?C.green:C.orange):C.muted}}>
-                      {calDelta!=null?(calDelta>0?`+${calDelta}`:calDelta):'—'}<span style={{fontSize:10,color:C.sub,marginLeft:2}}>kcal</span>
+                    <div style={{fontSize:12,color:C.muted,marginBottom:3}}>DELTA</div>
+                    <div style={{fontSize:17,fontWeight:600,color:calDelta!=null?(calDelta<0?C.green:C.orange):C.muted}}>
+                      {calDelta!=null?(calDelta>0?`+${calDelta}`:calDelta):'—'}<span style={{fontSize:12,color:C.sub,marginLeft:2}}>kcal</span>
                     </div>
                   </div>
                 </div>
@@ -1135,14 +1138,14 @@ export default function App(){
               {weightChart.length>1&&(
                 <Card C={C} onClick={()=>setTab("peso")}>
                   <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
-                    <span style={{fontSize:13,fontWeight:600,color:C.text}}>Andamento peso</span>
-                    <span style={{fontSize:11,color:C.blue}}>Dettaglio →</span>
+                    <span style={{fontSize:15,fontWeight:600,color:C.text}}>Andamento peso</span>
+                    <span style={{fontSize:13,color:C.blue}}>Dettaglio →</span>
                   </div>
                   <ResponsiveContainer width="100%" height={70}>
                     <AreaChart data={weightChart}>
                       <defs><linearGradient id="wg" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor={C.teal} stopOpacity={0.2}/><stop offset="95%" stopColor={C.teal} stopOpacity={0}/></linearGradient></defs>
                       <Area type="monotone" dataKey="Peso" stroke={C.teal} strokeWidth={1.5} fill="url(#wg)" dot={false}/>
-                      <YAxis domain={["auto","auto"]} hide/><XAxis dataKey="date" tick={{fill:C.muted,fontSize:9}} axisLine={false} tickLine={false} interval="preserveStartEnd"/>
+                      <YAxis domain={["auto","auto"]} hide/><XAxis dataKey="date" tick={{fill:C.muted,fontSize:11}} axisLine={false} tickLine={false} interval="preserveStartEnd"/>
                       <Tooltip content={<CTip C={C}/>}/>
                     </AreaChart>
                   </ResponsiveContainer>
@@ -1150,7 +1153,7 @@ export default function App(){
               )}
               {thisWeek.avgProt&&(
                 <Card C={C}>
-                  <div style={{fontSize:13,fontWeight:600,color:C.text,marginBottom:12}}>Media macro — settimana</div>
+                  <div style={{fontSize:15,fontWeight:600,color:C.text,marginBottom:12}}>Media macro — settimana</div>
                   <MBar C={C} label="Proteine" value={thisWeek.avgProt} max={plan.onP} color={C.green}/>
                   <MBar C={C} label="Carboidrati" value={thisWeek.avgCarb} max={plan.onC} color={C.orange}/>
                   <MBar C={C} label="Grassi" value={thisWeek.avgFat} max={plan.onF} color={C.purple}/>
@@ -1158,10 +1161,10 @@ export default function App(){
               )}
               {planDeltas.length>0&&(
                 <Card C={C}>
-                  <div style={{fontSize:13,fontWeight:600,color:C.text,marginBottom:14}}>Variazioni piano</div>
+                  <div style={{fontSize:15,fontWeight:600,color:C.text,marginBottom:14}}>Variazioni piano</div>
                   {planDeltas.slice(-2).map((d,i)=>(
                     <div key={i} style={{padding:"10px 0",borderBottom:i<Math.min(planDeltas.length,2)-1?`1px solid ${C.border}`:"none"}}>
-                      <div style={{fontSize:11,color:C.muted,marginBottom:6}}>{fmtShort(d.date)}</div>
+                      <div style={{fontSize:13,color:C.muted,marginBottom:6}}>{fmtShort(d.date)}</div>
                       <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
                         {d.dOn!==0&&<Tag label={`ON ${d.dOn>0?"+":""}${d.dOn}`} color={d.dOn<0?C.green:C.orange}/>}
                         {d.dOff!==0&&<Tag label={`OFF ${d.dOff>0?"+":""}${d.dOff}`} color={d.dOff<0?C.green:C.orange}/>}
@@ -1183,13 +1186,13 @@ export default function App(){
             {tab==="oggi"&&(<>
               {!todayType?(
                 <div style={{display:"flex",flexDirection:"column",gap:10}}>
-                  <div style={{fontSize:13,color:C.text,fontWeight:600}}>Che tipo di giornata è oggi?</div>
+                  <div style={{fontSize:15,color:C.text,fontWeight:600}}>Che tipo di giornata è oggi?</div>
                   <div style={{display:"flex",gap:12}}>
                     {[["on","ON",C.blue],["off","OFF",C.teal]].map(([type,label,color])=>(
                       <button key={type} onClick={()=>{upsertDay(today,{type,calories:plan[type+"Cal"],protein:plan[type+"P"],carbs:plan[type+"C"],fat:plan[type+"F"]});showToast(`Giorno ${label} impostato`);}}
                         style={{flex:1,padding:"22px 16px",background:C.bg1,border:`2px solid ${color}40`,borderRadius:18,cursor:"pointer",textAlign:"center",transition:"all 0.2s",boxShadow:C.shadow}}>
-                        <div style={{fontSize:22,fontWeight:800,color,marginBottom:8,letterSpacing:-0.5}}>{label}</div>
-                        <div style={{fontSize:18,fontWeight:600,color:C.text}}>{plan[type+"Cal"]}<span style={{fontSize:12,color:C.sub,marginLeft:4}}>kcal</span></div>
+                        <div style={{fontSize:24,fontWeight:800,color,marginBottom:8,letterSpacing:-0.5}}>{label}</div>
+                        <div style={{fontSize:20,fontWeight:600,color:C.text}}>{plan[type+"Cal"]}<span style={{fontSize:14,color:C.sub,marginLeft:4}}>kcal</span></div>
                       </button>
                     ))}
                   </div>
@@ -1201,12 +1204,12 @@ export default function App(){
                       <Tag label={todayType==="on"?"ON":"OFF"} color={todayType==="on"?C.blue:C.teal}/>
                       {todayData.isEstimate&&<Tag label="Stima AI" color={C.orange}/>}
                     </div>
-                    <button onClick={()=>upsertDay(today,{type:null})} style={{background:"none",border:"none",color:C.sub,fontSize:12,cursor:"pointer",fontFamily:C.f}}>Cambia</button>
+                    <button onClick={()=>upsertDay(today,{type:null})} style={{background:"none",border:"none",color:C.sub,fontSize:14,cursor:"pointer",fontFamily:C.f}}>Cambia</button>
                   </div>
                   <div style={{marginBottom:14}}>
                     <div style={{display:"flex",justifyContent:"space-between",marginBottom:5}}>
-                      <span style={{fontSize:13,fontWeight:600,color:C.text}}>{todayData.calories??'—'} <span style={{color:C.sub,fontWeight:400,fontSize:12}}>/ {tpl?.cal} kcal</span></span>
-                      <span style={{fontSize:12,color:C.sub}}>{tpl?.cal?`${Math.round(((todayData.calories||0)/tpl.cal)*100)}%`:""}</span>
+                      <span style={{fontSize:15,fontWeight:600,color:C.text}}>{todayData.calories??'—'} <span style={{color:C.sub,fontWeight:400,fontSize:14}}>/ {tpl?.cal} kcal</span></span>
+                      <span style={{fontSize:14,color:C.sub}}>{tpl?.cal?`${Math.round(((todayData.calories||0)/tpl.cal)*100)}%`:""}</span>
                     </div>
                     <div style={{height:6,background:C.bg3,borderRadius:99,overflow:"hidden"}}>
                       <div style={{height:6,width:`${tpl?.cal?Math.min(100,((todayData.calories||0)/tpl.cal)*100):0}%`,background:`linear-gradient(90deg,${C.blue},${C.indigo})`,borderRadius:99,transition:"width 0.5s"}}/>
@@ -1215,36 +1218,36 @@ export default function App(){
                   <MBar C={C} label="Proteine" value={todayData.protein} max={tpl?.p} color={C.green}/>
                   <MBar C={C} label="Carboidrati" value={todayData.carbs} max={tpl?.c} color={C.orange}/>
                   <MBar C={C} label="Grassi" value={todayData.fat} max={tpl?.f} color={C.purple}/>
-                  {todayData.note&&<div style={{marginTop:10,fontSize:12,color:C.sub,fontStyle:"italic"}}>{todayData.note}</div>}
+                  {todayData.note&&<div style={{marginTop:10,fontSize:14,color:C.sub,fontStyle:"italic"}}>{todayData.note}</div>}
                 </Card>
               )}
               <Card C={C}>
-                <div style={{fontSize:14,fontWeight:700,color:C.text,marginBottom:4}}>Inserimento</div>
-                <div style={{fontSize:11,color:C.muted,marginBottom:18}}>Salva automaticamente all'uscita dal campo</div>
+                <div style={{fontSize:16,fontWeight:700,color:C.text,marginBottom:4}}>Inserimento</div>
+                <div style={{fontSize:13,color:C.muted,marginBottom:18}}>Salva automaticamente all'uscita dal campo</div>
                 <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(120px,1fr))",gap:12,marginBottom:12}}>
                   {[["Calorie","calories","kcal",C.blue],["Proteine","protein","g",C.green],["Carboidrati","carbs","g",C.orange],["Grassi","fat","g",C.purple]].map(([l,k,u,color])=>(
                     <div key={k}>
-                      <div style={{fontSize:12,color:C.sub,marginBottom:6,fontWeight:500}}>{l}</div>
+                      <div style={{fontSize:14,color:C.sub,marginBottom:6,fontWeight:500}}>{l}</div>
                       <div style={{position:"relative"}}>
                         <input type="number" key={`${k}-${today}`} defaultValue={todayData[k]??""} onBlur={e=>upsertDay(today,{[k]:e.target.value?+e.target.value:null})}
                           placeholder={tpl?String(tpl[k[0]]):"0"}
                           style={{...inp,paddingRight:36}}
                           onFocus={e=>{e.target.style.borderColor=color;e.target.style.boxShadow=`0 0 0 3px ${color}14`;}}
                           onBlur={e=>{e.target.style.borderColor=C.border;e.target.style.boxShadow="none";upsertDay(today,{[k]:e.target.value?+e.target.value:null});}}/>
-                        <span style={{position:"absolute",right:11,top:"50%",transform:"translateY(-50%)",fontSize:11,color:C.muted,pointerEvents:"none"}}>{u}</span>
+                        <span style={{position:"absolute",right:11,top:"50%",transform:"translateY(-50%)",fontSize:13,color:C.muted,pointerEvents:"none"}}>{u}</span>
                       </div>
                     </div>
                   ))}
                 </div>
                 <div style={{marginBottom:12}}>
-                  <div style={{fontSize:11,color:C.sub,marginBottom:6,fontWeight:500}}>Passi</div>
+                  <div style={{fontSize:13,color:C.sub,marginBottom:6,fontWeight:500}}>Passi</div>
                   <input type="number" key={`steps-${today}`} defaultValue={todayData.steps??""} onBlur={e=>upsertDay(today,{steps:e.target.value?+e.target.value:null})} placeholder="8000" style={inp}/>
                 </div>
                 <div style={{marginBottom:16}}>
-                  <div style={{fontSize:11,color:C.sub,marginBottom:6,fontWeight:500}}>Note</div>
+                  <div style={{fontSize:13,color:C.sub,marginBottom:6,fontWeight:500}}>Note</div>
                   <input value={todayData.note??""} onChange={e=>upsertDay(today,{note:e.target.value})} placeholder="Refeed, sgarro, pasto fuori…" style={inp}/>
                 </div>
-                <button onClick={()=>showToast("Dati salvati ✓")} style={{width:"100%",padding:12,background:`linear-gradient(135deg,${C.blue},${C.indigo})`,border:"none",borderRadius:12,color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:C.f,letterSpacing:0.2}}>
+                <button onClick={()=>showToast("Dati salvati ✓")} style={{width:"100%",padding:12,background:`linear-gradient(135deg,${C.blue},${C.indigo})`,border:"none",borderRadius:12,color:"#fff",fontSize:15,fontWeight:600,cursor:"pointer",fontFamily:C.f,letterSpacing:0.2}}>
                   Salva
                 </button>
               </Card>
@@ -1254,7 +1257,7 @@ export default function App(){
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
                   </button>
                   <div style={{display:"flex",alignItems:"center",gap:8}}>
-                    <span style={{fontSize:12,color:weekOffset===0?C.sub:C.blue,fontWeight:weekOffset===0?400:500}}>
+                    <span style={{fontSize:14,color:weekOffset===0?C.sub:C.blue,fontWeight:weekOffset===0?400:500}}>
                       {weekOffset===0?"Questa settimana":weekOffset===-1?"Settimana scorsa":`${Math.abs(weekOffset)} sett. fa`}
                     </span>
                     <input type="date" onChange={e=>{
@@ -1265,7 +1268,7 @@ export default function App(){
                       const diffWeeks=Math.floor(diffMs/(7*24*3600*1000));
                       setWeekOffset(Math.min(0,diffWeeks));
                     }}
-                    style={{background:"none",border:`1px solid ${C.border}`,borderRadius:8,color:C.sub,fontSize:10,padding:"3px 6px",outline:"none",cursor:"pointer",fontFamily:C.f,width:32,opacity:0.6}}
+                    style={{background:"none",border:`1px solid ${C.border}`,borderRadius:8,color:C.sub,fontSize:12,padding:"3px 6px",outline:"none",cursor:"pointer",fontFamily:C.f,width:32,opacity:0.6}}
                     title="Vai a data"/>
                   </div>
                   <button onClick={()=>setWeekOffset(p=>Math.min(0,p+1))} disabled={weekOffset===0}
@@ -1281,11 +1284,11 @@ export default function App(){
                     const barColor=d.type==="on"?C.blue:d.type==="off"?C.teal:isT?C.blue:C.bg3;
                     return(
                       <div key={i} onClick={()=>setEditDay(date)} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:5,cursor:"pointer"}}>
-                        <div style={{fontSize:9,color:C.muted,marginBottom:2}}>{d.calories||""}</div>
+                        <div style={{fontSize:11,color:C.muted,marginBottom:2}}>{d.calories||""}</div>
                         <div style={{width:"100%",height:60,display:"flex",alignItems:"flex-end"}}>
                           <div style={{width:"100%",height:h,borderRadius:6,background:barColor,opacity:isT?1:0.6,outline:isT?`2px solid ${C.blue}`:"none",outlineOffset:2,transition:"height 0.3s ease"}}/>
                         </div>
-                        <span style={{fontSize:9,color:isT?C.blue:C.muted,fontWeight:isT?600:400}}>{fmtDL(date)}</span>
+                        <span style={{fontSize:11,color:isT?C.blue:C.muted,fontWeight:isT?600:400}}>{fmtDL(date)}</span>
                       </div>
                     );
                   })}
@@ -1293,7 +1296,7 @@ export default function App(){
               </Card>
               {/* Storico settimanale calorie */}
               <Card C={C}>
-                <div style={{fontSize:13,fontWeight:600,color:C.text,marginBottom:14}}>Storico settimanale</div>
+                <div style={{fontSize:15,fontWeight:600,color:C.text,marginBottom:14}}>Storico settimanale</div>
                 {weeklyStats.slice().reverse().filter(w=>w.avgCal).map((w,i)=>{
                   const wKey=`week_${i}`;
                   const wDates=getWeekDates(-(weeklyStats.filter(x=>x.avgCal).length-1-i));
@@ -1302,21 +1305,21 @@ export default function App(){
                     <div key={i} style={{padding:"14px 0",borderBottom:i<weeklyStats.filter(x=>x.avgCal).length-1?`1px solid ${C.border}`:"none"}}>
                       <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:10}}>
                         <div>
-                          <div style={{fontSize:13,color:isCurrent?C.blue:C.text,fontWeight:isCurrent?700:500,marginBottom:6}}>
+                          <div style={{fontSize:15,color:isCurrent?C.blue:C.text,fontWeight:isCurrent?700:500,marginBottom:6}}>
                             {isCurrent?"Questa settimana":w.label==="Scorsa"?"Scorsa settimana":w.label}
                           </div>
                           <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
-                            {w.onCount>0&&w.avgCalOn&&<span style={{fontSize:11,background:`${C.blue}14`,color:C.blue,borderRadius:6,padding:"2px 7px",fontWeight:500}}>{w.onCount} ON · {w.avgCalOn} kcal</span>}
-                            {w.offCount>0&&w.avgCalOff&&<span style={{fontSize:11,background:`${C.teal}14`,color:C.teal,borderRadius:6,padding:"2px 7px",fontWeight:500}}>{w.offCount} OFF · {w.avgCalOff} kcal</span>}
+                            {w.onCount>0&&w.avgCalOn&&<span style={{fontSize:13,background:`${C.blue}14`,color:C.blue,borderRadius:6,padding:"2px 7px",fontWeight:500}}>{w.onCount} ON · {w.avgCalOn} kcal</span>}
+                            {w.offCount>0&&w.avgCalOff&&<span style={{fontSize:13,background:`${C.teal}14`,color:C.teal,borderRadius:6,padding:"2px 7px",fontWeight:500}}>{w.offCount} OFF · {w.avgCalOff} kcal</span>}
                           </div>
                         </div>
                         <div style={{textAlign:"right"}}>
-                          <div style={{fontSize:20,fontWeight:700,color:isCurrent?C.blue:C.text,letterSpacing:-0.3}}>{w.avgCal}<span style={{fontSize:12,color:C.sub,marginLeft:3,fontWeight:400}}>kcal</span></div>
-                          <div style={{fontSize:10,color:C.muted,marginBottom:3}}>media totale</div>
+                          <div style={{fontSize:22,fontWeight:700,color:isCurrent?C.blue:C.text,letterSpacing:-0.3}}>{w.avgCal}<span style={{fontSize:14,color:C.sub,marginLeft:3,fontWeight:400}}>kcal</span></div>
+                          <div style={{fontSize:12,color:C.muted,marginBottom:3}}>media totale</div>
                           <div style={{display:"flex",gap:6,justifyContent:"flex-end",flexWrap:"wrap"}}>
-                            {w.avgProt&&<span style={{fontSize:11,color:C.green,fontWeight:500}}>P {w.avgProt}g</span>}
-                            {w.avgCarb&&<span style={{fontSize:11,color:C.orange,fontWeight:500}}>C {w.avgCarb}g</span>}
-                            {w.avgFat&&<span style={{fontSize:11,color:C.purple,fontWeight:500}}>G {w.avgFat}g</span>}
+                            {w.avgProt&&<span style={{fontSize:13,color:C.green,fontWeight:500}}>P {w.avgProt}g</span>}
+                            {w.avgCarb&&<span style={{fontSize:13,color:C.orange,fontWeight:500}}>C {w.avgCarb}g</span>}
+                            {w.avgFat&&<span style={{fontSize:13,color:C.purple,fontWeight:500}}>G {w.avgFat}g</span>}
                           </div>
                         </div>
                       </div>
@@ -1324,7 +1327,7 @@ export default function App(){
                         defaultValue={weekNotes[wKey]||""}
                         onBlur={e=>setWeekNotes(p=>({...p,[wKey]:e.target.value}))}
                         placeholder="Note settimana…"
-                        style={{...inp,fontSize:12,padding:"7px 10px",color:C.sub,background:C.bg2,border:`1px solid ${C.border}`}}
+                        style={{...inp,fontSize:14,padding:"7px 10px",color:C.sub,background:C.bg2,border:`1px solid ${C.border}`}}
                         onFocus={e=>{e.target.style.borderColor=C.blue;e.target.style.color=C.text;}}
                         onBlur2={e=>{e.target.style.borderColor=C.border;}}
                       />
@@ -1332,7 +1335,7 @@ export default function App(){
                   );
                 })}
                 {weeklyStats.filter(w=>w.avgCal).length===0&&(
-                  <div style={{fontSize:12,color:C.muted,textAlign:"center",padding:"16px 0"}}>Nessuna settimana con dati ancora.</div>
+                  <div style={{fontSize:14,color:C.muted,textAlign:"center",padding:"16px 0"}}>Nessuna settimana con dati ancora.</div>
                 )}
               </Card>
             </>)}
@@ -1350,41 +1353,41 @@ export default function App(){
                 </div>
               )}
               <Card C={C} hi>
-                <div style={{fontSize:12,color:C.sub,marginBottom:14}}>Nuova pesata</div>
+                <div style={{fontSize:14,color:C.sub,marginBottom:14}}>Nuova pesata</div>
                 <div style={{display:"flex",gap:10,marginBottom:10}}>
                   <div style={{flex:1}}>
-                    <div style={{fontSize:10,color:C.muted,marginBottom:4,fontWeight:500}}>PESO (KG)</div>
+                    <div style={{fontSize:12,color:C.muted,marginBottom:4,fontWeight:500}}>PESO (KG)</div>
                     <input type="number" step="0.1" value={wInput} onChange={e=>setWInput(e.target.value)} placeholder="83.2" style={inp}/>
                   </div>
                   <div style={{flex:1}}>
-                    <div style={{fontSize:10,color:C.muted,marginBottom:4,fontWeight:500}}>DATA</div>
+                    <div style={{fontSize:12,color:C.muted,marginBottom:4,fontWeight:500}}>DATA</div>
                     <input type="date" value={wDate} onChange={e=>setWDate(e.target.value)} style={inp}/>
                   </div>
                 </div>
                 <div style={{marginBottom:10}}>
-                  <div style={{fontSize:10,color:C.muted,marginBottom:4,fontWeight:500}}>NOTE (opzionale)</div>
+                  <div style={{fontSize:12,color:C.muted,marginBottom:4,fontWeight:500}}>NOTE (opzionale)</div>
                   <input value={wNote} onChange={e=>setWNote(e.target.value)} placeholder="Es: mattina a digiuno…" style={inp}/>
                 </div>
                 <button onClick={()=>{if(!wInput)return;upsertWeight(wDate,wInput,wNote);setWInput("");setWNote("");showToast("Peso salvato");}}
-                  style={{width:"100%",padding:11,background:`linear-gradient(135deg,${C.teal},${C.blue})`,border:"none",borderRadius:12,color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:C.f}}>
+                  style={{width:"100%",padding:11,background:`linear-gradient(135deg,${C.teal},${C.blue})`,border:"none",borderRadius:12,color:"#fff",fontSize:15,fontWeight:600,cursor:"pointer",fontFamily:C.f}}>
                   Salva
                 </button>
               </Card>
               {weightChart.length>1&&(
                 <Card C={C}>
                   <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
-                    <span style={{fontSize:13,fontWeight:600,color:C.text}}>Andamento peso</span>
+                    <span style={{fontSize:15,fontWeight:600,color:C.text}}>Andamento peso</span>
                     <div style={{display:"flex",gap:10}}>
-                      <div style={{display:"flex",gap:4,alignItems:"center"}}><div style={{width:14,height:2,background:C.teal,borderRadius:99}}/><span style={{fontSize:10,color:C.muted}}>Giornaliero</span></div>
-                      {weightWeeklyAvg.length>1&&<div style={{display:"flex",gap:4,alignItems:"center"}}><div style={{width:14,height:3,background:C.blue,borderRadius:99}}/><span style={{fontSize:10,color:C.muted}}>Media sett.</span></div>}
+                      <div style={{display:"flex",gap:4,alignItems:"center"}}><div style={{width:14,height:2,background:C.teal,borderRadius:99}}/><span style={{fontSize:12,color:C.muted}}>Giornaliero</span></div>
+                      {weightWeeklyAvg.length>1&&<div style={{display:"flex",gap:4,alignItems:"center"}}><div style={{width:14,height:3,background:C.blue,borderRadius:99}}/><span style={{fontSize:12,color:C.muted}}>Media sett.</span></div>}
                     </div>
                   </div>
                   <ResponsiveContainer width="100%" height={200}>
                     <AreaChart data={weightChart}>
                       <defs><linearGradient id="wg2" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor={C.teal} stopOpacity={0.15}/><stop offset="95%" stopColor={C.teal} stopOpacity={0}/></linearGradient></defs>
                       <CartesianGrid strokeDasharray="3 3" stroke={isDark?"rgba(255,255,255,0.04)":"rgba(0,0,0,0.05)"}/>
-                      <XAxis dataKey="date" tick={{fill:C.muted,fontSize:9}} axisLine={false} tickLine={false} interval="preserveStartEnd"/>
-                      <YAxis tick={{fill:C.muted,fontSize:10}} axisLine={false} tickLine={false} domain={["auto","auto"]}/>
+                      <XAxis dataKey="date" tick={{fill:C.muted,fontSize:11}} axisLine={false} tickLine={false} interval="preserveStartEnd"/>
+                      <YAxis tick={{fill:C.muted,fontSize:12}} axisLine={false} tickLine={false} domain={["auto","auto"]}/>
                       <Tooltip content={<CTip C={C}/>}/>
                       <Area type="monotone" dataKey="Peso" stroke={C.teal} strokeWidth={1.5} fill="url(#wg2)" dot={{fill:C.teal,r:2,strokeWidth:0}} opacity={0.8}/>
                     </AreaChart>
@@ -1393,8 +1396,8 @@ export default function App(){
                     <ResponsiveContainer width="100%" height={90}>
                       <AreaChart data={weightWeeklyAvg}>
                         <defs><linearGradient id="wgavg" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor={C.blue} stopOpacity={0.18}/><stop offset="95%" stopColor={C.blue} stopOpacity={0}/></linearGradient></defs>
-                        <XAxis dataKey="date" tick={{fill:C.muted,fontSize:9}} axisLine={false} tickLine={false}/>
-                        <YAxis tick={{fill:C.muted,fontSize:10}} axisLine={false} tickLine={false} domain={["auto","auto"]}/>
+                        <XAxis dataKey="date" tick={{fill:C.muted,fontSize:11}} axisLine={false} tickLine={false}/>
+                        <YAxis tick={{fill:C.muted,fontSize:12}} axisLine={false} tickLine={false} domain={["auto","auto"]}/>
                         <Tooltip content={<CTip C={C}/>}/>
                         <Area type="monotone" dataKey="Media" stroke={C.blue} strokeWidth={2.5} fill="url(#wgavg)" dot={{fill:C.blue,r:4,strokeWidth:0}}/>
                       </AreaChart>
@@ -1403,20 +1406,20 @@ export default function App(){
                 </Card>
               )}
               <Card C={C}>
-                <div style={{fontSize:13,fontWeight:600,color:C.text,marginBottom:14}}>Storico pesate</div>
+                <div style={{fontSize:15,fontWeight:600,color:C.text,marginBottom:14}}>Storico pesate</div>
                 {[...weightLog].reverse().slice(0,30).map((w,i,arr)=>(
                   <div key={i} style={{padding:"10px 0",borderBottom:i<arr.length-1?`1px solid ${C.border}`:"none"}}>
                     <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                      <span style={{fontSize:13,color:C.sub}}>{fmtShort(w.date)}</span>
+                      <span style={{fontSize:15,color:C.sub}}>{fmtShort(w.date)}</span>
                       <div style={{display:"flex",gap:14,alignItems:"center"}}>
-                        <span style={{fontSize:16,fontWeight:600,color:C.teal}}>{w.weight} <span style={{fontSize:11,color:C.muted}}>kg</span></span>
-                        <button onClick={()=>deleteWeight(w.date)} style={{background:"none",border:"none",color:C.muted,fontSize:18,cursor:"pointer",lineHeight:1}}>×</button>
+                        <span style={{fontSize:18,fontWeight:600,color:C.teal}}>{w.weight} <span style={{fontSize:13,color:C.muted}}>kg</span></span>
+                        <button onClick={()=>deleteWeight(w.date)} style={{background:"none",border:"none",color:C.muted,fontSize:20,cursor:"pointer",lineHeight:1}}>×</button>
                       </div>
                     </div>
-                    {w.note&&<div style={{fontSize:11,color:C.muted,marginTop:3,fontStyle:"italic"}}>{w.note}</div>}
+                    {w.note&&<div style={{fontSize:13,color:C.muted,marginTop:3,fontStyle:"italic"}}>{w.note}</div>}
                   </div>
                 ))}
-                {!weightLog.length&&<div style={{color:C.muted,textAlign:"center",padding:24,fontSize:13}}>Nessuna pesata registrata.</div>}
+                {!weightLog.length&&<div style={{color:C.muted,textAlign:"center",padding:24,fontSize:15}}>Nessuna pesata registrata.</div>}
               </Card>
             </>)}
 
@@ -1428,19 +1431,19 @@ export default function App(){
                 {[["on","Giorni ON",C.blue],["off","Giorni OFF",C.teal]].map(([type,label,color])=>(
                   <Card key={type} C={C} style={{border:`1.5px solid ${color}30`}}>
                     <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:18}}>
-                      <div style={{fontSize:15,fontWeight:700,color}}>{label}</div>
-                      <div style={{fontSize:13,color:C.sub}}>Media: <span style={{color:C.text,fontWeight:600}}>{plan[type+"Cal"]} kcal</span></div>
+                      <div style={{fontSize:17,fontWeight:700,color}}>{label}</div>
+                      <div style={{fontSize:15,color:C.sub}}>Media: <span style={{color:C.text,fontWeight:600}}>{plan[type+"Cal"]} kcal</span></div>
                     </div>
                     <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(120px,1fr))",gap:10}}>
                       {[["Calorie","Cal","kcal"],["Proteine","P","g"],["Carboidrati","C","g"],["Grassi","F","g"]].map(([l,k,u])=>(
                         <div key={k}>
-                          <div style={{fontSize:12,color:C.sub,marginBottom:6,fontWeight:500}}>{l}</div>
+                          <div style={{fontSize:14,color:C.sub,marginBottom:6,fontWeight:500}}>{l}</div>
                           <div style={{display:"flex",alignItems:"center",background:C.bg3,borderRadius:12,border:`1px solid ${C.border}`,transition:"border-color 0.2s"}}>
                             <input type="number" value={plan[type+k]} onChange={e=>setPlan(p=>({...p,[type+k]:+e.target.value}))}
                               onFocus={e=>e.target.parentElement.style.borderColor=color}
                               onBlur={e=>e.target.parentElement.style.borderColor=C.border}
-                              style={{flex:1,background:"none",border:"none",color:C.text,padding:"10px 12px",fontSize:14,fontWeight:500,outline:"none",fontFamily:C.f}}/>
-                            <span style={{color:C.sub,fontSize:12,paddingRight:10,fontWeight:500}}>{u}</span>
+                              style={{flex:1,background:"none",border:"none",color:C.text,padding:"10px 12px",fontSize:16,fontWeight:500,outline:"none",fontFamily:C.f}}/>
+                            <span style={{color:C.sub,fontSize:14,paddingRight:10,fontWeight:500}}>{u}</span>
                           </div>
                         </div>
                       ))}
@@ -1448,27 +1451,27 @@ export default function App(){
                   </Card>
                 ))}
                 <button onClick={savePlanVar}
-                  style={{width:"100%",padding:14,background:`linear-gradient(135deg,${C.blue},${C.indigo})`,border:"none",borderRadius:14,color:"#fff",fontSize:14,fontWeight:600,cursor:"pointer",fontFamily:C.f,letterSpacing:0.2,boxShadow:`0 4px 16px ${C.blue}30`}}>
+                  style={{width:"100%",padding:14,background:`linear-gradient(135deg,${C.blue},${C.indigo})`,border:"none",borderRadius:14,color:"#fff",fontSize:16,fontWeight:600,cursor:"pointer",fontFamily:C.f,letterSpacing:0.2,boxShadow:`0 4px 16px ${C.blue}30`}}>
                   Salva e registra variazione
                 </button>
                 {weeksOn>=1&&(
                   <Card C={C}>
                     <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
-                      <span style={{fontSize:13,fontWeight:600,color:C.text}}>Piano corrente</span>
+                      <span style={{fontSize:15,fontWeight:600,color:C.text}}>Piano corrente</span>
                       <Tag label={`Sett. ${weeksOn}`} color={C.blue}/>
                     </div>
                     <div style={{display:"flex",justifyContent:"space-between",marginBottom:6}}>
-                      <span style={{fontSize:12,color:C.sub}}>Attivo dal</span>
-                      <span style={{fontSize:12,fontWeight:500,color:C.text}}>{fmtShort(curPlan?.date)}</span>
+                      <span style={{fontSize:14,color:C.sub}}>Attivo dal</span>
+                      <span style={{fontSize:14,fontWeight:500,color:C.text}}>{fmtShort(curPlan?.date)}</span>
                     </div>
                     <div style={{display:"flex",justifyContent:"space-between"}}>
-                      <span style={{fontSize:12,color:C.sub}}>Media stimata</span>
-                      <span style={{fontSize:12,fontWeight:500,color:C.blue}}>{Math.round((plan.onCal*4+plan.offCal*3)/7)} kcal/g</span>
+                      <span style={{fontSize:14,color:C.sub}}>Media stimata</span>
+                      <span style={{fontSize:14,fontWeight:500,color:C.blue}}>{Math.round((plan.onCal*4+plan.offCal*3)/7)} kcal/g</span>
                     </div>
                   </Card>
                 )}
                 <button onClick={()=>{if(window.confirm("Cancellare tutti i dati?")){}}}
-                  style={{background:`${C.red}10`,border:`1px solid ${C.red}20`,borderRadius:12,color:C.red,fontSize:12,fontWeight:500,padding:"11px 16px",cursor:"pointer",fontFamily:C.f,width:"100%"}}>
+                  style={{background:`${C.red}10`,border:`1px solid ${C.red}20`,borderRadius:12,color:C.red,fontSize:14,fontWeight:500,padding:"11px 16px",cursor:"pointer",fontFamily:C.f,width:"100%"}}>
                   Reset dati
                 </button>
               </>)}
@@ -1477,24 +1480,24 @@ export default function App(){
                   {[...sortedPH].reverse().map((p,i)=>(
                     <Card key={i} C={C}>
                       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
-                        <span style={{fontSize:14,fontWeight:700,color:i===0?C.blue:C.text}}>{i===0?"Piano attuale":fmtShort(p.date)}</span>
+                        <span style={{fontSize:16,fontWeight:700,color:i===0?C.blue:C.text}}>{i===0?"Piano attuale":fmtShort(p.date)}</span>
                         <div style={{display:"flex",gap:8,alignItems:"center"}}>
-                          {i!==0&&<span style={{fontSize:11,color:C.sub}}>{p.date}</span>}
-                          {i!==0&&<button onClick={()=>deletePlanVar(p.date)} style={{background:"none",border:"none",color:C.muted,fontSize:18,cursor:"pointer",lineHeight:1}}>×</button>}
+                          {i!==0&&<span style={{fontSize:13,color:C.sub}}>{p.date}</span>}
+                          {i!==0&&<button onClick={()=>deletePlanVar(p.date)} style={{background:"none",border:"none",color:C.muted,fontSize:20,cursor:"pointer",lineHeight:1}}>×</button>}
                         </div>
                       </div>
                       <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(90px,1fr))",gap:8,marginBottom:i<sortedPH.length-1?10:0}}>
                         <div style={{background:C.bg2,borderRadius:12,padding:"10px 12px"}}>
-                          <div style={{fontSize:10,color:C.muted,marginBottom:4}}>ON</div>
-                          <div style={{fontSize:16,fontWeight:700,color:C.blue}}>{p.onCal}<span style={{fontSize:10,color:C.sub,marginLeft:2}}>kcal</span></div>
+                          <div style={{fontSize:12,color:C.muted,marginBottom:4}}>ON</div>
+                          <div style={{fontSize:18,fontWeight:700,color:C.blue}}>{p.onCal}<span style={{fontSize:12,color:C.sub,marginLeft:2}}>kcal</span></div>
                         </div>
                         <div style={{background:C.bg2,borderRadius:12,padding:"10px 12px"}}>
-                          <div style={{fontSize:10,color:C.muted,marginBottom:4}}>OFF</div>
-                          <div style={{fontSize:16,fontWeight:700,color:C.teal}}>{p.offCal}<span style={{fontSize:10,color:C.sub,marginLeft:2}}>kcal</span></div>
+                          <div style={{fontSize:12,color:C.muted,marginBottom:4}}>OFF</div>
+                          <div style={{fontSize:18,fontWeight:700,color:C.teal}}>{p.offCal}<span style={{fontSize:12,color:C.sub,marginLeft:2}}>kcal</span></div>
                         </div>
                         <div style={{background:C.bg2,borderRadius:12,padding:"10px 12px"}}>
-                          <div style={{fontSize:10,color:C.muted,marginBottom:4}}>Media</div>
-                          <div style={{fontSize:16,fontWeight:700,color:C.text}}>{Math.round((p.onCal*4+p.offCal*3)/7)}<span style={{fontSize:10,color:C.sub,marginLeft:2}}>kcal</span></div>
+                          <div style={{fontSize:12,color:C.muted,marginBottom:4}}>Media</div>
+                          <div style={{fontSize:18,fontWeight:700,color:C.text}}>{Math.round((p.onCal*4+p.offCal*3)/7)}<span style={{fontSize:12,color:C.sub,marginLeft:2}}>kcal</span></div>
                         </div>
                       </div>
                       {i<sortedPH.length-1&&(()=>{
@@ -1520,7 +1523,7 @@ export default function App(){
                       })()}
                     </Card>
                   ))}
-                  {sortedPH.length<=1&&<div style={{color:C.muted,textAlign:"center",padding:30,fontSize:13}}>Nessuna variazione registrata.</div>}
+                  {sortedPH.length<=1&&<div style={{color:C.muted,textAlign:"center",padding:30,fontSize:15}}>Nessuna variazione registrata.</div>}
                 </div>
               )}
             </>)}
@@ -1574,16 +1577,16 @@ export default function App(){
                       <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:12}}>
                         <div>
                           <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:6}}>
-                            <span style={{fontSize:11,fontWeight:600,background:`${typeColor}14`,color:typeColor,borderRadius:6,padding:"3px 9px"}}>{typeLabel}</span>
-                            <span style={{fontSize:11,color:C.muted}}>{totalWeeks} settimane</span>
+                            <span style={{fontSize:13,fontWeight:600,background:`${typeColor}14`,color:typeColor,borderRadius:6,padding:"3px 9px"}}>{typeLabel}</span>
+                            <span style={{fontSize:13,color:C.muted}}>{totalWeeks} settimane</span>
                           </div>
-                          <div style={{fontSize:16,fontWeight:700,color:C.text}}>{planning.name}</div>
-                          <div style={{fontSize:11,color:C.sub,marginTop:3}}>{fmtShort(planning.startDate)} → {fmtShort(planning.weeks[planning.weeks.length-1]?.date)}</div>
+                          <div style={{fontSize:18,fontWeight:700,color:C.text}}>{planning.name}</div>
+                          <div style={{fontSize:13,color:C.sub,marginTop:3}}>{fmtShort(planning.startDate)} → {fmtShort(planning.weeks[planning.weeks.length-1]?.date)}</div>
                         </div>
                         {currentWeekIdx>=0&&(
                           <div style={{textAlign:"right"}}>
-                            <div style={{fontSize:22,fontWeight:700,color:typeColor}}>{currentWeekIdx+1}<span style={{fontSize:13,color:C.sub}}>/{totalWeeks}</span></div>
-                            <div style={{fontSize:10,color:C.muted}}>settimana attuale</div>
+                            <div style={{fontSize:24,fontWeight:700,color:typeColor}}>{currentWeekIdx+1}<span style={{fontSize:15,color:C.sub}}>/{totalWeeks}</span></div>
+                            <div style={{fontSize:12,color:C.muted}}>settimana attuale</div>
                           </div>
                         )}
                       </div>
@@ -1604,7 +1607,7 @@ export default function App(){
 
                     {/* Grafico calorie */}
                     <Card C={C}>
-                      <div style={{fontSize:13,fontWeight:600,color:C.text,marginBottom:14}}>Progressione calorie pianificate</div>
+                      <div style={{fontSize:15,fontWeight:600,color:C.text,marginBottom:14}}>Progressione calorie pianificate</div>
                       <ResponsiveContainer width="100%" height={160}>
                         <AreaChart data={chartData}>
                           <defs>
@@ -1612,16 +1615,16 @@ export default function App(){
                             <linearGradient id="pgoff" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor={C.teal} stopOpacity={0.12}/><stop offset="95%" stopColor={C.teal} stopOpacity={0}/></linearGradient>
                           </defs>
                           <CartesianGrid strokeDasharray="3 3" stroke={isDark?"rgba(255,255,255,0.04)":"rgba(0,0,0,0.04)"} vertical={false}/>
-                          <XAxis dataKey="week" tick={{fill:C.muted,fontSize:9}} axisLine={false} tickLine={false}/>
-                          <YAxis tick={{fill:C.muted,fontSize:9}} axisLine={false} tickLine={false} domain={["auto","auto"]} width={36}/>
+                          <XAxis dataKey="week" tick={{fill:C.muted,fontSize:11}} axisLine={false} tickLine={false}/>
+                          <YAxis tick={{fill:C.muted,fontSize:11}} axisLine={false} tickLine={false} domain={["auto","auto"]} width={36}/>
                           <Tooltip content={<CTip C={C}/>}/>
                           <Area type="monotone" dataKey="Cal ON" stroke={C.blue} strokeWidth={2} fill="url(#pgon)" dot={false}/>
                           <Area type="monotone" dataKey="Cal OFF" stroke={C.teal} strokeWidth={1.5} strokeDasharray="4 3" fill="url(#pgoff)" dot={false}/>
                         </AreaChart>
                       </ResponsiveContainer>
                       <div style={{display:"flex",gap:12,marginTop:8}}>
-                        <div style={{display:"flex",gap:4,alignItems:"center"}}><div style={{width:12,height:2,background:C.blue,borderRadius:99}}/><span style={{fontSize:10,color:C.muted}}>Cal ON</span></div>
-                        <div style={{display:"flex",gap:4,alignItems:"center"}}><div style={{width:12,height:2,background:C.teal,borderRadius:99,opacity:0.7}}/><span style={{fontSize:10,color:C.muted}}>Cal OFF</span></div>
+                        <div style={{display:"flex",gap:4,alignItems:"center"}}><div style={{width:12,height:2,background:C.blue,borderRadius:99}}/><span style={{fontSize:12,color:C.muted}}>Cal ON</span></div>
+                        <div style={{display:"flex",gap:4,alignItems:"center"}}><div style={{width:12,height:2,background:C.teal,borderRadius:99,opacity:0.7}}/><span style={{fontSize:12,color:C.muted}}>Cal OFF</span></div>
                       </div>
                     </Card>
 
@@ -1635,7 +1638,7 @@ export default function App(){
                       return(
                         <Card C={C}>
                           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
-                            <span style={{fontSize:13,fontWeight:600,color:C.text}}>Peso pianificato vs reale</span>
+                            <span style={{fontSize:15,fontWeight:600,color:C.text}}>Peso pianificato vs reale</span>
                           </div>
                           <ResponsiveContainer width="100%" height={160}>
                             <AreaChart data={weightCompChart}>
@@ -1644,17 +1647,17 @@ export default function App(){
                                 <linearGradient id="pwreal" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor={C.teal} stopOpacity={0.2}/><stop offset="95%" stopColor={C.teal} stopOpacity={0}/></linearGradient>
                               </defs>
                               <CartesianGrid strokeDasharray="3 3" stroke={isDark?"rgba(255,255,255,0.04)":"rgba(0,0,0,0.04)"} vertical={false}/>
-                              <XAxis dataKey="week" tick={{fill:C.muted,fontSize:9}} axisLine={false} tickLine={false}/>
-                              <YAxis tick={{fill:C.muted,fontSize:9}} axisLine={false} tickLine={false} domain={["auto","auto"]} width={36}/>
+                              <XAxis dataKey="week" tick={{fill:C.muted,fontSize:11}} axisLine={false} tickLine={false}/>
+                              <YAxis tick={{fill:C.muted,fontSize:11}} axisLine={false} tickLine={false} domain={["auto","auto"]} width={36}/>
                               <Tooltip content={<CTip C={C}/>}/>
                               <Area type="monotone" dataKey="Pianificato" stroke={C.muted} strokeWidth={1.5} strokeDasharray="5 3" fill="url(#pwplan)" dot={false}/>
                               {hasReal&&<Area type="monotone" dataKey="Reale" stroke={C.teal} strokeWidth={2} fill="url(#pwreal)" dot={{fill:C.teal,r:3,strokeWidth:0}} connectNulls={false}/>}
                             </AreaChart>
                           </ResponsiveContainer>
                           <div style={{display:"flex",gap:12,marginTop:8}}>
-                            <div style={{display:"flex",gap:4,alignItems:"center"}}><div style={{width:14,height:2,background:C.muted,borderRadius:99,opacity:0.6}}/><span style={{fontSize:10,color:C.muted}}>Pianificato</span></div>
-                            <div style={{display:"flex",gap:4,alignItems:"center"}}><div style={{width:14,height:2,background:C.teal,borderRadius:99}}/><span style={{fontSize:10,color:C.muted}}>Reale</span></div>
-                            {!hasReal&&<span style={{fontSize:10,color:C.muted,fontStyle:"italic"}}>— il peso reale apparirà settimana per settimana</span>}
+                            <div style={{display:"flex",gap:4,alignItems:"center"}}><div style={{width:14,height:2,background:C.muted,borderRadius:99,opacity:0.6}}/><span style={{fontSize:12,color:C.muted}}>Pianificato</span></div>
+                            <div style={{display:"flex",gap:4,alignItems:"center"}}><div style={{width:14,height:2,background:C.teal,borderRadius:99}}/><span style={{fontSize:12,color:C.muted}}>Reale</span></div>
+                            {!hasReal&&<span style={{fontSize:12,color:C.muted,fontStyle:"italic"}}>— il peso reale apparirà settimana per settimana</span>}
                           </div>
                         </Card>
                       );
@@ -1663,9 +1666,9 @@ export default function App(){
                     {/* Tabella settimane */}
                     <Card C={C}>
                       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
-                        <span style={{fontSize:13,fontWeight:600,color:C.text}}>Settimane</span>
-                        {planningView==="view"&&<button onClick={()=>setPlanningView("edit")} style={{fontSize:12,color:C.blue,background:"none",border:`1px solid ${C.blue}30`,borderRadius:8,padding:"4px 10px",cursor:"pointer",fontFamily:C.f}}>Modifica</button>}
-                        {planningView==="edit"&&<button onClick={savePlanning} style={{fontSize:12,color:"#fff",background:C.blue,border:"none",borderRadius:8,padding:"5px 12px",cursor:"pointer",fontFamily:C.f,fontWeight:600}}>Salva</button>}
+                        <span style={{fontSize:15,fontWeight:600,color:C.text}}>Settimane</span>
+                        {planningView==="view"&&<button onClick={()=>setPlanningView("edit")} style={{fontSize:14,color:C.blue,background:"none",border:`1px solid ${C.blue}30`,borderRadius:8,padding:"4px 10px",cursor:"pointer",fontFamily:C.f}}>Modifica</button>}
+                        {planningView==="edit"&&<button onClick={savePlanning} style={{fontSize:14,color:"#fff",background:C.blue,border:"none",borderRadius:8,padding:"5px 12px",cursor:"pointer",fontFamily:C.f,fontWeight:600}}>Salva</button>}
                       </div>
                       {planning.weeks.map((w,i)=>{
                         const isCurrent=i===currentWeekIdx;
@@ -1676,72 +1679,72 @@ export default function App(){
                             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
                               <div style={{display:"flex",alignItems:"center",gap:10}}>
                                 <div style={{width:28,height:28,borderRadius:99,background:isCurrent?typeColor:isPast?C.bg3:C.bg2,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-                                  <span style={{fontSize:11,fontWeight:700,color:isCurrent?"#fff":C.sub}}>{w.week}</span>
+                                  <span style={{fontSize:13,fontWeight:700,color:isCurrent?"#fff":C.sub}}>{w.week}</span>
                                 </div>
                                 <div>
-                                  <span style={{fontSize:13,color:isCurrent?typeColor:C.text,fontWeight:isCurrent?700:500}}>{fmtShort(w.date)}</span>
-                                  {isCurrent&&<span style={{fontSize:11,color:typeColor,marginLeft:6}}>← ora</span>}
+                                  <span style={{fontSize:15,color:isCurrent?typeColor:C.text,fontWeight:isCurrent?700:500}}>{fmtShort(w.date)}</span>
+                                  {isCurrent&&<span style={{fontSize:13,color:typeColor,marginLeft:6}}>← ora</span>}
                                 </div>
                               </div>
-                              <span style={{fontSize:14,fontWeight:700,color:isCurrent?typeColor:C.text}}>{w.weightTarget} kg</span>
+                              <span style={{fontSize:16,fontWeight:700,color:isCurrent?typeColor:C.text}}>{w.weightTarget} kg</span>
                             </div>
                             {planningView==="edit"?(
                               <>
-                                <div style={{fontSize:11,color:C.muted,marginBottom:6,fontWeight:500}}>Calorie</div>
+                                <div style={{fontSize:13,color:C.muted,marginBottom:6,fontWeight:500}}>Calorie</div>
                                 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:12}}>
                                   {[["Calorie ON","onCal","kcal"],["Calorie OFF","offCal","kcal"]].map(([l,k,u])=>(
                                     <div key={k}>
-                                      <div style={{fontSize:12,color:C.sub,marginBottom:5,fontWeight:500}}>{l}</div>
+                                      <div style={{fontSize:14,color:C.sub,marginBottom:5,fontWeight:500}}>{l}</div>
                                       <div style={{position:"relative"}}>
                                         <input type="number" defaultValue={w[k]} onBlur={e=>updateWeek(i,k,e.target.value?+e.target.value:w[k])}
-                                          style={{...inp,paddingRight:36,fontSize:13}}/>
-                                        <span style={{position:"absolute",right:9,top:"50%",transform:"translateY(-50%)",fontSize:11,color:C.muted,pointerEvents:"none"}}>{u}</span>
+                                          style={{...inp,paddingRight:36,fontSize:15}}/>
+                                        <span style={{position:"absolute",right:9,top:"50%",transform:"translateY(-50%)",fontSize:13,color:C.muted,pointerEvents:"none"}}>{u}</span>
                                       </div>
                                     </div>
                                   ))}
                                 </div>
-                                <div style={{fontSize:11,color:C.muted,marginBottom:6,fontWeight:500}}>Macro ON</div>
+                                <div style={{fontSize:13,color:C.muted,marginBottom:6,fontWeight:500}}>Macro ON</div>
                                 <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(100px,1fr))",gap:10,marginBottom:12}}>
                                   {[["Proteine","onP","g"],["Carboidrati","onC","g"],["Grassi","onF","g"]].map(([l,k,u])=>(
                                     <div key={k}>
-                                      <div style={{fontSize:12,color:C.sub,marginBottom:5,fontWeight:500}}>{l}</div>
+                                      <div style={{fontSize:14,color:C.sub,marginBottom:5,fontWeight:500}}>{l}</div>
                                       <div style={{position:"relative"}}>
                                         <input type="number" defaultValue={w[k]} onBlur={e=>updateWeek(i,k,e.target.value?+e.target.value:w[k])}
-                                          style={{...inp,paddingRight:28,fontSize:13}}/>
-                                        <span style={{position:"absolute",right:9,top:"50%",transform:"translateY(-50%)",fontSize:11,color:C.muted,pointerEvents:"none"}}>{u}</span>
+                                          style={{...inp,paddingRight:28,fontSize:15}}/>
+                                        <span style={{position:"absolute",right:9,top:"50%",transform:"translateY(-50%)",fontSize:13,color:C.muted,pointerEvents:"none"}}>{u}</span>
                                       </div>
                                     </div>
                                   ))}
                                 </div>
-                                <div style={{fontSize:11,color:C.muted,marginBottom:6,fontWeight:500}}>Macro OFF</div>
+                                <div style={{fontSize:13,color:C.muted,marginBottom:6,fontWeight:500}}>Macro OFF</div>
                                 <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(100px,1fr))",gap:10,marginBottom:10}}>
                                   {[["Proteine","offP","g"],["Carboidrati","offC","g"],["Grassi","offF","g"]].map(([l,k,u])=>(
                                     <div key={k}>
-                                      <div style={{fontSize:12,color:C.sub,marginBottom:5,fontWeight:500}}>{l}</div>
+                                      <div style={{fontSize:14,color:C.sub,marginBottom:5,fontWeight:500}}>{l}</div>
                                       <div style={{position:"relative"}}>
                                         <input type="number" defaultValue={w[k]||""} onBlur={e=>updateWeek(i,k,e.target.value?+e.target.value:w[k])}
-                                          style={{...inp,paddingRight:28,fontSize:13}}/>
-                                        <span style={{position:"absolute",right:9,top:"50%",transform:"translateY(-50%)",fontSize:11,color:C.muted,pointerEvents:"none"}}>{u}</span>
+                                          style={{...inp,paddingRight:28,fontSize:15}}/>
+                                        <span style={{position:"absolute",right:9,top:"50%",transform:"translateY(-50%)",fontSize:13,color:C.muted,pointerEvents:"none"}}>{u}</span>
                                       </div>
                                     </div>
                                   ))}
                                 </div>
                                 <div>
-                                  <div style={{fontSize:12,color:C.sub,marginBottom:5,fontWeight:500}}>Peso target</div>
+                                  <div style={{fontSize:14,color:C.sub,marginBottom:5,fontWeight:500}}>Peso target</div>
                                   <div style={{position:"relative",maxWidth:140}}>
                                     <input type="number" defaultValue={w.weightTarget} onBlur={e=>updateWeek(i,"weightTarget",e.target.value?+e.target.value:w.weightTarget)}
-                                      style={{...inp,paddingRight:28,fontSize:13}}/>
-                                    <span style={{position:"absolute",right:9,top:"50%",transform:"translateY(-50%)",fontSize:11,color:C.muted,pointerEvents:"none"}}>kg</span>
+                                      style={{...inp,paddingRight:28,fontSize:15}}/>
+                                    <span style={{position:"absolute",right:9,top:"50%",transform:"translateY(-50%)",fontSize:13,color:C.muted,pointerEvents:"none"}}>kg</span>
                                   </div>
                                 </div>
                                 <div style={{marginTop:12,padding:"10px 14px",background:C.bg2,borderRadius:12,border:`1px solid ${C.border}`}}>
-                                  <div style={{fontSize:11,color:C.sub,marginBottom:8,fontWeight:500}}>Applica questi valori alle settimane successive</div>
+                                  <div style={{fontSize:13,color:C.sub,marginBottom:8,fontWeight:500}}>Applica questi valori alle settimane successive</div>
                                   <div style={{display:"flex",gap:8,alignItems:"center"}}>
-                                    <span style={{fontSize:12,color:C.text}}>Dalla sett. {w.week+1} per</span>
+                                    <span style={{fontSize:14,color:C.text}}>Dalla sett. {w.week+1} per</span>
                                     <input type="number" min="1" max={planning.weeks.length-i-1} defaultValue={Math.min(3,planning.weeks.length-i-1)}
                                       id={`apply-count-${i}`}
-                                      style={{...inp,width:60,padding:"6px 8px",fontSize:13,textAlign:"center"}}/>
-                                    <span style={{fontSize:12,color:C.text}}>sett.</span>
+                                      style={{...inp,width:60,padding:"6px 8px",fontSize:15,textAlign:"center"}}/>
+                                    <span style={{fontSize:14,color:C.text}}>sett.</span>
                                     <button onClick={()=>{
                                       const count=parseInt(document.getElementById(`apply-count-${i}`)?.value)||1;
                                       const fields=["onCal","offCal","onP","onC","onF","offP","offC","offF"];
@@ -1755,39 +1758,39 @@ export default function App(){
                                       })}));
                                       showToast(`Applicato alle prossime ${count} settimane`);
                                     }}
-                                      style={{padding:"6px 14px",background:C.blue,border:"none",borderRadius:8,color:"#fff",fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:C.f,whiteSpace:"nowrap"}}>
+                                      style={{padding:"6px 14px",background:C.blue,border:"none",borderRadius:8,color:"#fff",fontSize:14,fontWeight:600,cursor:"pointer",fontFamily:C.f,whiteSpace:"nowrap"}}>
                                       Applica
                                     </button>
                                   </div>
-                                  {i===planning.weeks.length-1&&<div style={{fontSize:10,color:C.muted,marginTop:6}}>Ultima settimana — nessuna successiva</div>}
+                                  {i===planning.weeks.length-1&&<div style={{fontSize:12,color:C.muted,marginTop:6}}>Ultima settimana — nessuna successiva</div>}
                                 </div>
                               </>
                             ):(
                               <div style={{display:"flex",flexDirection:"column",gap:8}}>
                                 <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
-                                  <span style={{fontSize:12,background:`${C.blue}14`,color:C.blue,borderRadius:6,padding:"3px 10px",fontWeight:500}}>ON {w.onCal} kcal</span>
-                                  <span style={{fontSize:12,background:`${C.teal}14`,color:C.teal,borderRadius:6,padding:"3px 10px",fontWeight:500}}>OFF {w.offCal} kcal</span>
+                                  <span style={{fontSize:14,background:`${C.blue}14`,color:C.blue,borderRadius:6,padding:"3px 10px",fontWeight:500}}>ON {w.onCal} kcal</span>
+                                  <span style={{fontSize:14,background:`${C.teal}14`,color:C.teal,borderRadius:6,padding:"3px 10px",fontWeight:500}}>OFF {w.offCal} kcal</span>
                                 </div>
                                 <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
-                                  <span style={{fontSize:11,color:C.sub,fontWeight:500,minWidth:30}}>ON:</span>
-                                  {w.onP&&<span style={{fontSize:12,color:C.green,fontWeight:500}}>Prot {w.onP}g</span>}
-                                  {w.onC&&<span style={{fontSize:12,color:C.orange,fontWeight:500}}>Carb {w.onC}g</span>}
-                                  {w.onF&&<span style={{fontSize:12,color:C.purple,fontWeight:500}}>Gras {w.onF}g</span>}
+                                  <span style={{fontSize:13,color:C.sub,fontWeight:500,minWidth:30}}>ON:</span>
+                                  {w.onP&&<span style={{fontSize:14,color:C.green,fontWeight:500}}>Prot {w.onP}g</span>}
+                                  {w.onC&&<span style={{fontSize:14,color:C.orange,fontWeight:500}}>Carb {w.onC}g</span>}
+                                  {w.onF&&<span style={{fontSize:14,color:C.purple,fontWeight:500}}>Gras {w.onF}g</span>}
                                 </div>
                                 {(w.offP||w.offC||w.offF)&&(
                                   <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
-                                    <span style={{fontSize:11,color:C.sub,fontWeight:500,minWidth:30}}>OFF:</span>
-                                    {w.offP&&<span style={{fontSize:12,color:C.green,fontWeight:500}}>Prot {w.offP}g</span>}
-                                    {w.offC&&<span style={{fontSize:12,color:C.orange,fontWeight:500}}>Carb {w.offC}g</span>}
-                                    {w.offF&&<span style={{fontSize:12,color:C.purple,fontWeight:500}}>Gras {w.offF}g</span>}
+                                    <span style={{fontSize:13,color:C.sub,fontWeight:500,minWidth:30}}>OFF:</span>
+                                    {w.offP&&<span style={{fontSize:14,color:C.green,fontWeight:500}}>Prot {w.offP}g</span>}
+                                    {w.offC&&<span style={{fontSize:14,color:C.orange,fontWeight:500}}>Carb {w.offC}g</span>}
+                                    {w.offF&&<span style={{fontSize:14,color:C.purple,fontWeight:500}}>Gras {w.offF}g</span>}
                                   </div>
                                 )}
                               </div>
                             )}
                             {planningView==="edit"?(
                               <input defaultValue={w.note} onBlur={e=>updateWeek(i,"note",e.target.value)}
-                                placeholder="Note settimana…" style={{...inp,fontSize:11,padding:"6px 10px",marginTop:6}}/>
-                            ):(w.note&&<div style={{fontSize:11,color:C.muted,marginTop:6,fontStyle:"italic"}}>{w.note}</div>)}
+                                placeholder="Note settimana…" style={{...inp,fontSize:13,padding:"6px 10px",marginTop:6}}/>
+                            ):(w.note&&<div style={{fontSize:13,color:C.muted,marginTop:6,fontStyle:"italic"}}>{w.note}</div>)}
                           </div>
                         );
                       })}
@@ -1795,12 +1798,12 @@ export default function App(){
 
                     <div style={{display:"flex",gap:10}}>
                       <button onClick={()=>{setPlanning(null);setPlanningView("setup");}}
-                        style={{flex:1,padding:12,background:C.bg2,border:`1px solid ${C.border}`,borderRadius:12,color:C.sub,fontSize:13,cursor:"pointer",fontFamily:C.f}}>
+                        style={{flex:1,padding:12,background:C.bg2,border:`1px solid ${C.border}`,borderRadius:12,color:C.sub,fontSize:15,cursor:"pointer",fontFamily:C.f}}>
                         Nuovo piano
                       </button>
                       {planningView==="edit"&&(
                         <button onClick={savePlanning}
-                          style={{flex:2,padding:12,background:`linear-gradient(135deg,${C.blue},${C.indigo})`,border:"none",borderRadius:12,color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:C.f}}>
+                          style={{flex:2,padding:12,background:`linear-gradient(135deg,${C.blue},${C.indigo})`,border:"none",borderRadius:12,color:"#fff",fontSize:15,fontWeight:600,cursor:"pointer",fontFamily:C.f}}>
                           Salva piano
                         </button>
                       )}
@@ -1811,7 +1814,7 @@ export default function App(){
                         await sb.from("athlete_planning").delete().eq("id",planning.id).eq("user_id",user.id);
                         setPlanning(null);setPlanningView("setup");showToast("Piano eliminato");
                       }}
-                        style={{width:"100%",padding:11,background:`${C.red}10`,border:`1px solid ${C.red}20`,borderRadius:12,color:C.red,fontSize:13,fontWeight:500,cursor:"pointer",fontFamily:C.f}}>
+                        style={{width:"100%",padding:11,background:`${C.red}10`,border:`1px solid ${C.red}20`,borderRadius:12,color:C.red,fontSize:15,fontWeight:500,cursor:"pointer",fontFamily:C.f}}>
                         Elimina piano
                       </button>
                     )}
@@ -1842,7 +1845,7 @@ export default function App(){
             return(
               <button key={n.id} onClick={()=>{setTab(n.id);if(n.id!=="oggi")setWeekOffset(0);}} style={{background:"none",border:"none",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:4,padding:"4px 10px",fontFamily:C.f}}>
                 <div style={{transform:active?"translateY(-1px)":"none",transition:"transform 0.18s ease"}}>{n.icon(active)}</div>
-                <span style={{fontSize:10,color:active?C.blue:C.muted,fontWeight:active?600:400,transition:"color 0.18s"}}>{n.label}</span>
+                <span style={{fontSize:12,color:active?C.blue:C.muted,fontWeight:active?600:400,transition:"color 0.18s"}}>{n.label}</span>
               </button>
             );
           })}
@@ -1855,8 +1858,8 @@ export default function App(){
           <div onClick={e=>e.stopPropagation()} style={{width:"100%",maxWidth:640,margin:"0 auto",background:C.bg1,borderRadius:"28px 28px 0 0",padding:"22px 20px 44px",maxHeight:"88vh",overflowY:"auto",border:`1px solid ${C.border}`}}>
             <div style={{width:36,height:4,background:C.bg4,borderRadius:99,margin:"0 auto 18px"}}/>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
-              <span style={{fontSize:16,fontWeight:700,color:C.text}}>{fmtShort(editDay)}</span>
-              <button onClick={()=>setEditDay(null)} style={{background:C.bg3,border:"none",color:C.sub,width:30,height:30,borderRadius:99,cursor:"pointer",fontSize:16,display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>
+              <span style={{fontSize:18,fontWeight:700,color:C.text}}>{fmtShort(editDay)}</span>
+              <button onClick={()=>setEditDay(null)} style={{background:C.bg3,border:"none",color:C.sub,width:30,height:30,borderRadius:99,cursor:"pointer",fontSize:18,display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>
             </div>
             <Seg C={C} options={[{value:"on",label:`ON · ${plan.onCal} kcal`},{value:"off",label:`OFF · ${plan.offCal} kcal`}]} value={days[editDay]?.type||null}
               onChange={type=>upsertDay(editDay,{type,calories:plan[type+"Cal"],protein:plan[type+"P"],carbs:plan[type+"C"],fat:plan[type+"F"]})}/>
@@ -1864,20 +1867,20 @@ export default function App(){
             <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(120px,1fr))",gap:10,marginBottom:10}}>
               {[["Calorie","calories"],["Proteine (g)","protein"],["Carbo (g)","carbs"],["Grassi (g)","fat"]].map(([l,k])=>(
                 <div key={k}>
-                  <div style={{fontSize:10,color:C.muted,marginBottom:4,fontWeight:500}}>{l.toUpperCase()}</div>
+                  <div style={{fontSize:12,color:C.muted,marginBottom:4,fontWeight:500}}>{l.toUpperCase()}</div>
                   <input type="number" key={`modal-${k}-${editDay}`} defaultValue={days[editDay]?.[k]??""} onBlur={e=>upsertDay(editDay,{[k]:e.target.value?+e.target.value:null})} style={inp}/>
                 </div>
               ))}
             </div>
             <div style={{marginBottom:10}}>
-              <div style={{fontSize:10,color:C.muted,marginBottom:4,fontWeight:500}}>PASSI</div>
+              <div style={{fontSize:12,color:C.muted,marginBottom:4,fontWeight:500}}>PASSI</div>
               <input type="number" key={`modal-steps-${editDay}`} defaultValue={days[editDay]?.steps??""} onBlur={e=>upsertDay(editDay,{steps:e.target.value?+e.target.value:null})} placeholder="8000" style={inp}/>
             </div>
             <div style={{marginBottom:18}}>
-              <div style={{fontSize:10,color:C.muted,marginBottom:4,fontWeight:500}}>NOTE</div>
+              <div style={{fontSize:12,color:C.muted,marginBottom:4,fontWeight:500}}>NOTE</div>
               <input value={days[editDay]?.note??""} onChange={e=>upsertDay(editDay,{note:e.target.value})} placeholder="Sgarro, pasto fuori, refeed…" style={inp}/>
             </div>
-            <button onClick={()=>{setEditDay(null);showToast("Salvato");}} style={{width:"100%",padding:13,background:`linear-gradient(135deg,${C.blue},${C.indigo})`,border:"none",borderRadius:14,color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:C.f}}>
+            <button onClick={()=>{setEditDay(null);showToast("Salvato");}} style={{width:"100%",padding:13,background:`linear-gradient(135deg,${C.blue},${C.indigo})`,border:"none",borderRadius:14,color:"#fff",fontSize:15,fontWeight:600,cursor:"pointer",fontFamily:C.f}}>
               Salva e chiudi
             </button>
           </div>
@@ -1886,7 +1889,7 @@ export default function App(){
 
       {/* TOAST */}
       {toast&&(
-        <div style={{position:"fixed",bottom:94,left:"50%",transform:"translateX(-50%)",background:C.bg2,border:`1px solid ${C.borderHi}`,color:C.text,borderRadius:14,padding:"9px 18px",fontSize:12,fontWeight:500,zIndex:999,boxShadow:"0 8px 28px rgba(0,0,0,0.5)",whiteSpace:"nowrap"}}>
+        <div style={{position:"fixed",bottom:94,left:"50%",transform:"translateX(-50%)",background:C.bg2,border:`1px solid ${C.borderHi}`,color:C.text,borderRadius:14,padding:"9px 18px",fontSize:14,fontWeight:500,zIndex:999,boxShadow:"0 8px 28px rgba(0,0,0,0.5)",whiteSpace:"nowrap"}}>
           {toast}
         </div>
       )}
