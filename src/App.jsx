@@ -49,8 +49,37 @@ function pointPct(data,index,padTop,padBottom){
   const yPct=(padTop+(1-(data[index]-min)/range)*(100-padTop-padBottom));
   return{xPct:xPct.toFixed(1),yPct:yPct.toFixed(1)};
 }
+function seededNoise(i){return Math.sin(i*12.9898)*43758.5453%1;}
+function generateDemoData(){
+  const values=[];let val=91.4;
+  for(let i=0;i<60;i++){val=val-0.09+(Math.abs(seededNoise(i))-0.5)*0.55;values.push(+val.toFixed(1));}
+  const today=new Date();
+  const chart=values.map((v,i)=>{
+    const d=new Date(today);d.setDate(d.getDate()-(59-i));
+    return{date:d.toLocaleDateString("it-IT",{day:"numeric",month:"short"}),Peso:v};
+  });
+  return{
+    weightChart:chart,
+    lastW:values[values.length-1],
+    avgW7:+(values.slice(-7).reduce((a,b)=>a+b,0)/7).toFixed(1),
+    avgW7delta:-0.6,
+    avgCal:2410,calDelta:-30,avgSteps:8240,
+  };
+}
 function getPlanAt(history,date){const s=[...history].sort((a,b)=>a.date.localeCompare(b.date));const a=s.filter(p=>p.date<=date);return a.length?a[a.length-1]:s[0]||null;}
 
+
+// Stili tipografici centralizzati: cambia qui una volta, si applica ovunque viene usato TYPE.xxx
+const TYPE={
+  hero:{fontSize:34,fontWeight:800,fontFamily:"tight"},      // numero grande protagonista (es. peso nel grafico)
+  cardValue:{fontSize:24,fontWeight:700,fontFamily:"tight"}, // numero medio nelle card leggere
+  sectionTitle:{fontSize:15,fontWeight:600,fontFamily:"tight"}, // titolo di sezione con barra colorata
+  kicker:{fontSize:12,fontWeight:700,fontFamily:"tight"},    // badge quadratino+testo colorato
+  label:{fontSize:12,fontWeight:500,fontFamily:"base"},      // etichette piccole sopra i valori
+  body:{fontSize:14,fontWeight:400,fontFamily:"base"},       // testo normale
+  small:{fontSize:11,fontWeight:500,fontFamily:"base"},      // note/microtesto
+};
+function typeStyle(T,C,extra={}){return{fontSize:T.fontSize,fontWeight:T.fontWeight,fontFamily:T.fontFamily==="tight"?C.fTight:C.f,...extra};}
 
 const DARK={
   bg0:"#050506",bg1:"#141416",bg2:"#1B1B1E",bg3:"#232326",bg4:"#2C2C30",
@@ -864,6 +893,7 @@ export default function App(){
   const[syncing,setSyncing]=useState(false);
   const[tab,setTab]=useState("dashboard");
   const[sidebarCollapsed,setSidebarCollapsed]=useState(()=>localStorage.getItem("atk_sidebar")==="collapsed");
+  const[demoMode,setDemoMode]=useState(false);
   const[sidebarMode,setSidebarMode]=useState("dashboard");
   const[checkinCardioSessions,setCheckinCardioSessions]=useState("");
   const[checkinCardioMinutes,setCheckinCardioMinutes]=useState("");
@@ -1136,25 +1166,12 @@ export default function App(){
             <span style={{width:22,height:22,background:C.pink,flexShrink:0}}/>
             <span style={{fontSize:20,fontWeight:700,letterSpacing:-0.3,color:C.text,fontFamily:C.fTight}}>athlete tracker</span>
           </div>
-          <div style={{display:"flex",gap:10,alignItems:"center",flex:1,justifyContent:"center",minWidth:0,overflow:"hidden"}}>
-            {lastW!=null&&(
-              <div style={{background:C.glass,backdropFilter:"blur(20px)",border:`1px solid ${C.border}`,borderLeft:`3px solid ${C.pink}`,borderRadius:6,padding:"7px 14px",display:"flex",flexDirection:"column",gap:1}}>
-                <span style={{fontSize:11,color:C.sub}}>peso</span>
-                <div style={{display:"flex",alignItems:"baseline",gap:5}}>
-                  <span style={{fontSize:14,fontWeight:700,color:C.text,fontFamily:C.fTight}}>{lastW} kg</span>
-                  {wDelta!=null&&<span style={{fontSize:11,color:wDelta<0?C.green:C.orange,fontWeight:600}}>{wDelta>0?"+":""}{wDelta}</span>}
-                </div>
-              </div>
-            )}
-            {thisWeek.avgCal&&(
-              <div style={{background:C.glass,backdropFilter:"blur(20px)",border:`1px solid ${C.border}`,borderLeft:`3px solid ${C.blue}`,borderRadius:6,padding:"7px 14px",display:"flex",flexDirection:"column",gap:1}}>
-                <span style={{fontSize:11,color:C.sub}}>calorie sett.</span>
-                <div style={{display:"flex",alignItems:"baseline",gap:5}}>
-                  <span style={{fontSize:14,fontWeight:700,color:C.text,fontFamily:C.fTight}}>{thisWeek.avgCal} kcal</span>
-                  {calDelta!=null&&<span style={{fontSize:11,color:calDelta<0?C.green:C.orange,fontWeight:600}}>{calDelta>0?"+":""}{calDelta}</span>}
-                </div>
-              </div>
-            )}
+          <div style={{display:"flex",gap:8,alignItems:"center",flex:1,justifyContent:"center",minWidth:0,overflow:"hidden"}}>
+            <button onClick={()=>setDemoMode(p=>!p)}
+              style={{display:"flex",alignItems:"center",gap:7,background:demoMode?`${C.pink}14`:C.bg2,border:`1px solid ${demoMode?C.pink+"40":C.border}`,borderRadius:6,padding:"7px 12px",cursor:"pointer",fontFamily:C.f}}>
+              <span style={{width:6,height:6,borderRadius:"50%",background:demoMode?C.pink:C.muted,flexShrink:0}}/>
+              <span style={{fontSize:12,fontWeight:500,color:demoMode?C.pink:C.sub}}>modalità demo{demoMode?" attiva":""}</span>
+            </button>
           </div>
           <div style={{display:"flex",gap:8,alignItems:"center",flexShrink:0}}>
             {syncing&&<span style={{fontSize:13,color:C.muted}}>Sync…</span>}
@@ -1232,12 +1249,18 @@ export default function App(){
 
             {/* ── DASHBOARD ── */}
             {tab==="dashboard"&&(<>
-              <Kicker label="dashboard" C={C}/>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                <Kicker label="dashboard" C={C}/>
+                {demoMode&&<Tag label="dati di esempio" color={C.pink}/>}
+              </div>
 
-              {weightChart.length>1&&(()=>{
+              {(()=>{
+                const demo=demoMode?generateDemoData():null;
+                const srcChart=demo?demo.weightChart:weightChart;
+                if(srcChart.length<2)return null;
                 const periods={"1m":30,"3m":90,"6m":180,"1y":365,"all":9999};
                 const n=periods[dashPeriod]||9999;
-                const dataFull=weightChart.slice(-n);
+                const dataFull=srcChart.slice(-n);
                 const values=dataFull.map(d=>d.Peso);
                 const W=1000,H=300;
                 const path=buildLinePath(values,W,H);
@@ -1246,14 +1269,16 @@ export default function App(){
                 const badgeIdx=Math.max(0,Math.min(values.length-1,Math.floor((values.length-1)*0.75)));
                 const badgePt=pointPct(values,badgeIdx,12,10);
                 const idxLabels=[0,1,2,3,4,5].map(k=>Math.round(k*(dataFull.length-1)/5));
+                const heroW=demo?demo.lastW:lastW;
+                const heroDelta=demo?demo.avgW7delta:avgW7delta;
                 return(
                   <Card C={C} onClick={()=>setTab("peso")} style={{position:"relative"}}>
                     <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:14,flexWrap:"wrap",gap:12}}>
                       <div>
-                        <div style={{fontSize:12,color:C.sub,fontWeight:500,textTransform:"lowercase"}}>andamento peso</div>
+                        <div style={typeStyle(TYPE.label,C,{textTransform:"lowercase"})}>andamento peso</div>
                         <div style={{display:"flex",alignItems:"baseline",gap:10,marginTop:6}}>
-                          <span style={{fontSize:34,fontWeight:800,color:C.text,lineHeight:1,fontFamily:C.fTight}}>{lastW??'—'} <span style={{fontSize:14,fontWeight:500,color:C.sub}}>kg</span></span>
-                          {avgW7delta!=null&&<Tag label={`${avgW7delta>0?"+":""}${avgW7delta} sett.`} color={avgW7delta<0?C.green:C.orange}/>}
+                          <span style={typeStyle(TYPE.hero,C,{color:C.text,lineHeight:1})}>{heroW??'—'} <span style={{fontSize:14,fontWeight:500,color:C.sub}}>kg</span></span>
+                          {heroDelta!=null&&<Tag label={`${heroDelta>0?"+":""}${heroDelta} sett.`} color={heroDelta<0?C.green:C.orange}/>}
                         </div>
                       </div>
                       <div onClick={e=>e.stopPropagation()} style={{display:"flex",background:C.bg2,borderRadius:6,padding:3,gap:2}}>
@@ -1301,9 +1326,9 @@ export default function App(){
                 <Card C={C} onClick={()=>setTab("piano")} style={{borderLeft:`3px solid ${C.pink}`}}>
                   <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:14}}>
                     <span style={{width:3,height:14,background:C.pink}}/>
-                    <span style={{fontSize:13,fontWeight:600,color:C.text,fontFamily:C.fTight}}>giorno ON</span>
+                    <span style={typeStyle(TYPE.sectionTitle,C,{fontSize:13})}>giorno ON</span>
                   </div>
-                  <div style={{fontSize:24,fontWeight:700,color:C.text,fontFamily:C.fTight,marginBottom:10}}>{plan.onCal} <span style={{fontSize:13,color:C.sub,fontWeight:400}}>kcal</span></div>
+                  <div style={{...typeStyle(TYPE.cardValue,C),marginBottom:10}}>{plan.onCal} <span style={{fontSize:13,color:C.sub,fontWeight:400}}>kcal</span></div>
                   <div style={{display:"flex",gap:12,fontSize:12,color:C.sub}}>
                     <span>P {plan.onP}g</span><span>C {plan.onC}g</span><span>G {plan.onF}g</span>
                   </div>
@@ -1311,9 +1336,9 @@ export default function App(){
                 <Card C={C} onClick={()=>setTab("piano")} style={{borderLeft:`3px solid ${C.blue}`}}>
                   <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:14}}>
                     <span style={{width:3,height:14,background:C.blue}}/>
-                    <span style={{fontSize:13,fontWeight:600,color:C.text,fontFamily:C.fTight}}>giorno OFF</span>
+                    <span style={typeStyle(TYPE.sectionTitle,C,{fontSize:13})}>giorno OFF</span>
                   </div>
-                  <div style={{fontSize:24,fontWeight:700,color:C.text,fontFamily:C.fTight,marginBottom:10}}>{plan.offCal} <span style={{fontSize:13,color:C.sub,fontWeight:400}}>kcal</span></div>
+                  <div style={{...typeStyle(TYPE.cardValue,C),marginBottom:10}}>{plan.offCal} <span style={{fontSize:13,color:C.sub,fontWeight:400}}>kcal</span></div>
                   <div style={{display:"flex",gap:12,fontSize:12,color:C.sub}}>
                     <span>P {plan.offP}g</span><span>C {plan.offC}g</span><span>G {plan.offF}g</span>
                   </div>
@@ -1321,9 +1346,9 @@ export default function App(){
                 <Card C={C} onClick={()=>setTab("oggi")} style={{borderLeft:`3px solid ${C.orange}`}}>
                   <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:14}}>
                     <span style={{width:3,height:14,background:C.orange}}/>
-                    <span style={{fontSize:13,fontWeight:600,color:C.text,fontFamily:C.fTight}}>media passi</span>
+                    <span style={typeStyle(TYPE.sectionTitle,C,{fontSize:13})}>media passi</span>
                   </div>
-                  <div style={{fontSize:24,fontWeight:700,color:C.text,fontFamily:C.fTight}}>{thisWeek.avgSteps??'—'} <span style={{fontSize:13,color:C.sub,fontWeight:400}}>passi/gg</span></div>
+                  <div style={typeStyle(TYPE.cardValue,C)}>{(demoMode?generateDemoData().avgSteps:thisWeek.avgSteps)??'—'} <span style={{fontSize:13,color:C.sub,fontWeight:400}}>passi/gg</span></div>
                 </Card>
                 <Card C={C} onClick={()=>setTab("checkin")} style={{borderLeft:`3px solid ${C.green}`}}>
                   <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:14}}>
