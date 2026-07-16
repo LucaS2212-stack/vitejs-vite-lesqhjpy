@@ -1,6 +1,6 @@
 # Roadmap — Athlete Tracker
 
-Ultimo aggiornamento: 2026-07-15, dopo la prima analisi approfondita del codice (`src/App.jsx`, 2077 righe) fatta con Claude Code. Questo file non esisteva prima nel repo — è stato ricostruito da zero partendo dal riepilogo dato a voce dall'utente più tutto ciò che è emerso leggendo il codice riga per riga. Vive in `vitejs-vite-lesqhjpy-main/` (il vero project root).
+Creato 2026-07-15 dopo la prima analisi approfondita del codice (`src/App.jsx`, 2077 righe) fatta con Claude Code. Aggiornato 2026-07-16 con: collegamento del repo git reale, decisione+implementazione del nuovo Kicker, inventario funzionalità, e analisi di riorganizzazione delle sezioni esistenti (sezione 8). Questo file non esisteva prima del 2026-07-15 nel repo — è stato ricostruito da zero partendo dal riepilogo dato a voce dall'utente più tutto ciò che è emerso leggendo il codice riga per riga. Vive in `vitejs-vite-lesqhjpy-main/` (il vero project root).
 
 **Come usarlo**: quando riprendi il lavoro, apri questo file per primo. Aggiorna lo Stato di una riga quando fai qualcosa (⬜→🔧→✅), aggiungi righe nuove quando emergono altri problemi, non cancellare le righe fatte — spostale eventualmente in una sezione "Fatto" se il file diventa troppo lungo. Vedi anche `ISTRUZIONI-RIPRESA.md` per il contesto su come è nata questa lista.
 
@@ -54,6 +54,16 @@ Queste sono le regole che il progetto dichiara di seguire (raccolte dal riepilog
 | B2 | 🟢 | ⬜ | `onBlur2` è un prop React inesistente | Sull'input note in "Storico settimanale": il bordo si colora di blu al focus ma non torna mai al colore normale, perché il gestore di reset è scritto come `onBlur2` invece di sfruttare l'unico `onBlur` reale (che fa altro). | `App.jsx:1503` |
 | B3 | 🟡 | ❓ | Modalità demo copre solo una piccola parte dell'app | `generateDemoData()` alimenta solo il grafico peso hero e la KPI "media passi" in Dashboard. Tutti gli altri tab (Oggi, Peso, Piano, Planning, Meal Plan, Check-in) ignorano `demoMode` e continuano a leggere/scrivere Supabase reale. Il toggle in header promette più di quanto mantenga. **Decidere**: estendere a tutta l'app o etichettare più chiaramente l'ambito ("solo grafico peso")? | `App.jsx:1258, 1351` |
 | B4 | 🟢 | ⬜ | Bottom-nav mobile con 6 voci — verificare overflow | 6 icone in `justify-content:space-around` su schermi molto stretti non è stato verificato visivamente su viewport piccoli reali. Da controllare in DevTools mobile prima di considerarlo ok. | `App.jsx:2090-2102` |
+| B5 | 🔴 | ⬜ | Bottone "Reset dati" non fa nulla | `onClick={()=>{if(window.confirm("Cancellare tutti i dati?")){}}}` — il blocco `if` è vuoto. Popup di conferma, poi zero azione. | `App.jsx:1684` (tab Piano) |
+| B6 | 🔴 | ⬜ | Note di "Storico settimanale" (tab Oggi) non vengono mai salvate | `weekNotes` è `useState({})` puro — letto/scritto solo in memoria locale del componente, mai un `upsert` verso Supabase. Scrivi una nota, cambi tab o ricarichi la pagina: sparita. Nessun indizio visivo che avvisi l'utente che non sta salvando nulla. | `App.jsx:909, 1500` |
+| B7 | 🟡 | ⬜ | Bottone "Salva" nel tab Oggi è un placebo | `onClick={()=>showToast("Dati salvati ✓")}` — non chiama nessuna funzione di salvataggio reale. Tutti i campi sopra (calorie/proteine/carbo/grassi/passi/cardio) si salvano già da soli all'`onBlur` tramite `upsertDay`. Il bottone esiste solo per dare un feedback rassicurante, ma se un campo non ha ancora perso il focus (es. hai appena digitato e clicchi subito "Salva") quel valore NON è ancora stato salvato — il toast mente in quel caso specifico. | `App.jsx:1423` |
+
+### Collegamenti mancanti tra sezioni (i più importanti da capire prima di riorganizzare)
+
+| # | Priorità | Stato | Voce | Descrizione | Riferimento |
+|---|---|---|---|---|---|
+| X1 | 🔴 | ❓ | Planning non aggiorna mai il Piano attivo | Il tab **Planning** calcola una progressione di calorie/macro settimana per settimana (es. per un cut di 8 settimane, le calorie scendono gradualmente). Ma questi valori vivono *solo* dentro `athlete_planning` e alimentano *solo* i grafici del tab Planning stesso. Il tab **Oggi** invece applica ogni giorno i target da `plan` (tab Piano) — che resta fisso finché non lo modifichi *a mano* in Piano. Risultato: se imposti un cut strutturato in Planning, l'app non applica mai automaticamente la riduzione calorica pianificata al tracking giornaliero reale — sono due sistemi paralleli che non si parlano. Verificato: nessuna chiamata a `setPlan` esiste nel codice di Planning. | Planning (`App.jsx:1746-2032`) vs `plan`/Piano (`App.jsx:1621-1738`) |
+| X2 | 🔴 | ❓ | Meal Plan non alimenta il log giornaliero di Oggi | Nel tab **Meal Plan** costruisci pasti dettagliati con alimenti reali, quantità, macro calcolate automaticamente. Ma nel tab **Oggi** il log giornaliero è inserimento manuale di 4 numeri (calorie/proteine/carbo/grassi) — non ha alcun riferimento a cosa hai effettivamente pianificato o mangiato secondo il Meal Plan. Esiste uno stato `dayMeals` dichiarato (`useState({})`) che sembra un tentativo di collegare "pasti del giorno" al log giornaliero — ma non è mai letto né scritto da nessuna parte del codice: è stato iniziato e abbandonato. | `App.jsx:914` (dichiarazione mai usata) |
 
 ---
 
@@ -107,11 +117,127 @@ Progetto creato il 2026-07-16: **"Athlete Tracker — Design System"** (visibile
 
 Quando l'utente decide su D2 (uniformare o tenere due registri), aggiornare qui lo stato e procedere con l'implementazione nel codice sorgente.
 
+## 7. Funzionalità — inventario, miglioramenti, proposte
+
+Richiesto dall'utente il 2026-07-16: organizzare cosa c'è, cosa va migliorato, cosa manca, più idee proposte da Claude.
+
+### 7.1 Cosa c'è oggi (per area)
+
+| Area | Cosa fa | Dove |
+|---|---|---|
+| Autenticazione | Login/registrazione/logout via Supabase, opzione "rimani connesso" | `AuthScreen` |
+| Dashboard | Grafico peso hero (SVG custom, periodi 1M/3M/6M/1A/Tutto), card riepilogo ON/OFF (calorie+macro target), media passi settimana, ultimo check-in | tab Dashboard |
+| Log giornaliero | Calorie/proteine/carbo/grassi/passi/cardio/note, eccezione ON/OFF per il singolo giorno, bar chart settimana corrente (cliccabile → modale), storico settimanale con note libere | tab Oggi |
+| Pesata | Inserimento peso+nota, medie e delta vs giorno/settimana precedente, grafico giornaliero + media settimanale, storico con eliminazione | tab Peso |
+| Piano nutrizionale base | Pattern settimanale ON/OFF (7 giorni), editor calorie/macro per ON e OFF, storico variazioni con delta calcolati | tab Piano |
+| Planning strutturato | Piani multi-settimana (cut/bulk/recomp/mantenimento), progressione automatica calorie/peso target settimana per settimana, grafici pianificato-vs-reale, editing per settimana con propagazione "applica alle prossime N" | tab Planning |
+| Meal plan | Pasti separati ON/OFF, ricerca alimenti (Open Food Facts + USDA), alimenti preferiti ("i miei") e recenti, aggiunta manuale, scanner barcode via fotocamera, calcolo automatico quantità→macro, totali per pasto e per giornata, autosave | tab Meal Plan |
+| Check-in settimanale | Target sessioni/minuti cardio, minuti cardio effettivi (aggregati automaticamente dal log giornaliero), note libere | tab Check-in |
+| Modalità demo | Dati sintetici, ma solo per grafico peso Dashboard + media passi (vedi B3) | header |
+| Globale | Tema chiaro/scuro persistente, sidebar desktop collassabile, nav mobile a barra, fullscreen | tutta l'app |
+
+### 7.2 Da migliorare (funzionalità esistenti con lacune concrete)
+
+| # | Priorità | Stato | Voce | Descrizione | Riferimento |
+|---|---|---|---|---|---|
+| B5 | 🔴 | ⬜ | Bottone "Reset dati" non fa nulla | `onClick={()=>{if(window.confirm("Cancellare tutti i dati?")){}}}` — il blocco `if` è vuoto. L'utente vede il popup di conferma, clicca "ok", e non succede assolutamente niente. O si implementa davvero, o si toglie il bottone (così com'è ora è ingannevole). | `App.jsx:1684` (tab Piano) |
+| — | — | — | Modalità demo parziale | Vedi B3 in sezione 2 — copre solo grafico peso + media passi. | — |
+| — | — | — | Grafici pronti ma mai mostrati | Vedi F1-F3 in sezione 5 — calorie giornaliere, passi, riepilogo variazioni piano: dati già calcolati, solo da agganciare a un tab. | — |
+| — | — | — | Ricerca alimenti con chiave USDA a consumo limitato | Vedi I4 — rischio di iniziare a fallire silenziosamente con più utenti reali. | — |
+| — | — | — | Nessun feedback visibile su errori di rete | Vedi I6 — se Supabase non risponde, l'utente non vede nulla, solo `console.error`. | — |
+
+### 7.3 Proposte di Claude — funzionalità nuove da valutare
+
+Ordinate per quanto sembrano centrali rispetto all'identità dell'app (tracker da bodybuilder), non per facilità implementativa.
+
+| # | Impatto | Proposta | Perché | Effort stimato |
+|---|---|---|---|---|
+| P1 | 🔴 Alto | **Log allenamento pesi** (esercizi, serie, ripetizioni, carico) | È la lacuna più grande: l'app si chiama "Athlete Tracker" ed è pensata per bodybuilder, ma oggi traccia solo cardio in minuti — zero tracking dell'allenamento coi pesi, che per un bodybuilder è il dato più importante di tutti (progressive overload). Potrebbe agganciarsi al giorno ON/OFF come il resto. | Alto — nuova tabella Supabase, nuovo tab, UI per serie/ripetizioni |
+| P2 | 🟡 Medio-alto | **Misure corporee** (vita, petto, braccia, cosce…) oltre al solo peso | Il peso da solo non racconta ricomposizione corporea (si può perdere grasso e guadagnare muscolo a peso costante) — le circonferenze sono lo standard per chi fa cut/bulk seri. | Medio — riusa pattern già esistente per il peso (stessa UI, altra tabella) |
+| P3 | 🟡 Medio-alto | **Foto progressi** (galleria cronologica) | Confronto visivo nel tempo, standard in ogni app fitness seria, completa bene misure+peso. | Medio — serve storage immagini (Supabase Storage) |
+| P4 | 🟡 Medio | **Pasti/ricette riutilizzabili** ("il mio solito pranzo") | Oggi si salvano solo alimenti singoli preferiti; ricomporre lo stesso pasto di più alimenti va rifatto ogni volta. Un template pasto risparmierebbe molti click quotidiani. | Basso-medio — estende `athlete_foods`/meal plan esistente |
+| P5 | 🟢 Medio | **Import automatico passi** (Google Fit / Apple Health / Fitbit) | Oggi i passi si inseriscono a mano; con più utenti l'attrito quotidiano scoraggia l'uso costante. | Alto — richiede integrazioni OAuth con servizi esterni |
+| P6 | 🟢 Medio | **Esportazione dati** (CSV/PDF) | Utile per backup personale o per condividere l'andamento con un coach/nutrizionista esterno all'app. | Basso-medio |
+| P7 | 🟢 Medio | **Statistiche avanzate** (proiezione trend peso, correlazione aderenza calorica↔variazione peso) | Con mesi di dati storici già raccolti (peso, calorie, planning), c'è materiale per analisi più utili dei semplici totali attuali. | Medio |
+| P8 | 🟢 Basso-medio | **Notifiche/promemoria** (pesarsi, loggare pasti) | Aiuta l'aderenza quotidiana, ma richiede la app installabile (vedi P10) per le notifiche push sul telefono. | Medio (dipende da P10) |
+| P9 | 🟢 Basso | **Tracker idratazione** | Coerente con lo stile del tab Oggi, semplice da aggiungere se serve davvero. | Basso |
+| P10 | 🟢 Basso-medio | **PWA installabile** (manifest.json + service worker) | L'app ha già un layout mobile dedicato (bottom-nav) — renderla installabile la farebbe sembrare un'app nativa sul telefono, ed è prerequisito per notifiche push (P8). | Medio |
+
+## 8. Riorganizzazione delle sezioni esistenti
+
+Richiesto dall'utente il 2026-07-16, dopo aver deciso di non aggiungere per ora nuove funzionalità (niente log allenamento, misure corporee rimandate) e concentrarsi su ordinare meglio quello che c'è. I due collegamenti mancanti (X1, X2 sopra) sono il problema di fondo da cui dipende buona parte di questa sezione — vale la pena deciderli prima di riorganizzare visivamente, altrimenti si riordinano scaffali che puntano nel vuoto.
+
+### Dashboard
+**Struttura attuale**: Kicker + grafico peso hero, poi 4 card piatte (kcal ON, kcal OFF, media passi, ultimo check-in).
+**Punti deboli**:
+- È quasi solo "peso-centrica" — l'unica vista ricca è il grafico peso. Zero visibilità su come sta andando l'aderenza calorica/macro di oggi o della settimana, che per un bodybuilder in cut/bulk è altrettanto (se non più) rilevante del peso da solo.
+- Non mostra affatto il cardio, pur essendo tracciato ogni giorno.
+- Non mostra in che fase del piano ci si trova (Planning ha "settimana 4 di 8" ma non è visibile da Dashboard, che dovrebbe essere la vista d'insieme per definizione).
+- La card "ultimo check-in" mostra solo una nota troncata — poco utile come riepilogo a colpo d'occhio.
+
+**Come riorganizzare**: aggiungere sopra o accanto al grafico peso una riga di stato rapido: aderenza calorica di oggi/settimana (%), fase piano attuale se Planning è in uso ("Cut · Sett. 4/8"), cardio della settimana vs target. La card "ultimo check-in" andrebbe sostituita con qualcosa di più azionabile (es. countdown al prossimo check-in, o il target cardio con barra di progresso invece della nota).
+
+### Oggi
+**Struttura attuale**: 3 card in sequenza senza intestazioni — progresso di oggi (barre), form di inserimento, poi bar chart settimana + storico settimanale con note.
+**Punti deboli**:
+- Nessuna separazione visiva chiara tra "oggi" e "storico delle settimane passate" — sono nella stessa colonna di card senza un `Kicker` che segnali il cambio di argomento (coerente con D4).
+- Il bottone "Salva" è un placebo (B7) — dà un falso senso di "adesso ho salvato", quando in realtà ogni campo si salva già da solo. Meglio toglierlo o farlo diventare un vero riepilogo/conferma.
+- Le note di "Storico settimanale" si perdono al refresh (B6) — è probabilmente il bug più subdolo di tutta l'app: sembra funzionare (l'input accetta testo, non dà errori) ma non salva niente.
+- Il cardio inserito qui confluisce nel tab Check-in ma non c'è alcun rimando visivo tra le due sezioni — un utente nuovo non lo scoprirebbe mai leggendo solo l'interfaccia.
+
+**Come riorganizzare**: dividere chiaramente in due blocchi con Kicker propri — "oggi" (progresso + inserimento, che potrebbero anche fondersi in una sola card invece di due) e "storico" (bar chart settimana + lista settimane). Sistemare B6/B7 prima di qualunque riordino estetico, altrimenti si abbelisce un form che perde dati.
+
+### Peso
+**Struttura attuale**: 2 card valore + KPI row + form nuova pesata + grafico + storico.
+**Punti deboli**: è la sezione meglio organizzata dell'app — poco da dire. Unico neo: manca un Kicker in cima (D4), per coerenza con Dashboard/Check-in che invece ce l'hanno.
+**Come riorganizzare**: aggiungere il Kicker, per il resto lasciare la struttura com'è — è un buon modello da replicare altrove.
+
+### Piano
+**Struttura attuale**: Seg (Piano attuale / Storico variazioni) → pattern settimanale ON/OFF, editor macro ON/OFF, bottone salva, card "piano corrente", bottone reset (rotto).
+**Punti deboli**:
+- Sovrapposizione concettuale con Planning: entrambi rispondono alla domanda "quali sono i miei target calorici", ma con granularità diverse (fisso vs progressivo) e — come detto in X1 — senza alcun collegamento reale.
+- Bottone "Reset dati" rotto (B5).
+- La card "Piano corrente" (quando `weeksOn>=1`) ripete in sostanza gli stessi numeri già visibili aprendo "Storico variazioni" → riga più recente — leggera ridondanza, non grave.
+
+**Come riorganizzare**: prima decidere X1 (vedi sopra) — la riorganizzazione visiva di questa sezione dipende da quella scelta. Se si decide di *non* collegare Piano e Planning, andrebbe almeno chiarito nell'interfaccia che sono due strumenti diversi con scopi diversi (es. un sottotitolo tipo "target fissi che usi ogni giorno" vs "simulazione di progressione a lungo termine" in Planning), per evitare che l'utente pensi stiano già comunicando tra loro.
+
+### Planning
+**Struttura attuale**: setup iniziale (tipo piano, date, peso iniziale/target) → vista con header piano, KPI, 2 grafici (calorie pianificate, peso pianificato vs reale), tabella settimane editabile.
+**Punti deboli**: è la sezione più ricca e visivamente più curata di tutte, ma — per via di X1 — oggi funziona più come un "simulatore" isolato che come qualcosa che guida davvero il tracking quotidiano. È il tab con più lavoro dietro e meno impatto pratico sul resto dell'app, il che è un peccato.
+**Come riorganizzare**: la priorità qui non è riordinare la UI (è già ben fatta) ma decidere X1. Se si sceglie di collegarlo, la settimana corrente di Planning dovrebbe scrivere automaticamente su `plan` quando si entra in una nuova settimana (o quantomeno offrire un bottone "applica questa settimana come piano attivo").
+
+### Meal Plan
+**Struttura attuale**: Seg Giorno ON/OFF → totale giornata → card per pasto (con ricerca/aggiunta alimenti) → aggiungi pasto → salva meal plan.
+**Punti deboli**:
+- È un *template* riutilizzabile ("il mio pasto tipo nei giorni ON"), non un log del giorno specifico — cosa ragionevole di per sé, ma il nome "Meal Plan" e la sua vicinanza a "Oggi" nella sidebar suggeriscono all'utente che i due si parlino. Non è così (X2).
+- Nessun collegamento, nemmeno "morbido" (es. un bottone "usa questo pasto pianificato per oggi"), tra i pasti costruiti qui e i 4 numeri che si inseriscono a mano in Oggi.
+- Visivamente è la sezione più lontana dal linguaggio Dashboard/Peso (radius 12-24 ovunque, coerente con D2 più che con questa sezione specifica).
+
+**Come riorganizzare**: valutare se serve davvero collegare Meal Plan al log di Oggi (X2) — se sì, l'opzione più semplice senza stravolgere tutto è un bottone per-pasto "aggiungi al log di oggi" che sommi le macro di quel pasto ai campi calorie/proteine/carbo/grassi del giorno corrente, invece di ricostruire tutto il flusso di logging.
+
+### Check-in
+**Struttura attuale**: KPI row (media passi/calorie/peso) → card cardio (target vs reale) → card note.
+**Punti deboli**: sezione compatta e già abbastanza ordinata. Le medie di proteine/carbo/grassi settimanali sono già calcolate altrove (`weeklyStats`) ma non mostrate qui, mentre sarebbe il posto naturale per un riepilogo macro completo della settimana.
+**Come riorganizzare**: aggiungere le 3 medie macro mancanti alla KPI row (basta riusare `weeklyStats[7].avgProt/avgCarb/avgFat`, già calcolati, zero lavoro di logica nuova).
+
 ## Prossimi passi consigliati (ordine sensato)
 
-1. **D1** (font Inter Tight) — 5 minuti, impatto visivo immediato su tutta l'app.
-2. **I1** (chiarire lo stato del repo git) — prima di scrivere altro codice, capire dove deve finire per arrivare in produzione.
-3. **I2** (verificare RLS su Supabase) — sicurezza, va controllato prima di continuare ad aggiungere dati reali.
-4. **D2** (decidere se uniformare il linguaggio visivo) — è la domanda di design più grossa aperta, guida tutto il resto del lavoro estetico.
-5. Pulizia codice morto (sezione 3) — a rischio zero, si può fare in qualsiasi momento libero.
-6. Il resto (D3-D7, B1-B4, sezione 5) — via via, non urgente.
+*(elenco originale del 2026-07-15, mantenuto per riferimento — vedi sotto per lo stato aggiornato al 2026-07-16)*
+
+1. ~~**D1** (font Inter Tight)~~ ✅ fatto
+2. ~~**I1** (chiarire lo stato del repo git)~~ ✅ fatto
+3. ~~**I2** (verificare RLS su Supabase)~~ ✅ fatto
+4. **D2** (decidere se uniformare il linguaggio visivo) — ancora aperto
+5. Pulizia codice morto (sezione 3) — ancora da fare
+6. Il resto (D3, D5-D7, B1-B4, sezione 5) — via via, non urgente
+
+### Aggiornamento 2026-07-16 — prossimi passi
+
+Con la modalità demo, il log allenamento e le misure corporee esplicitamente rimandati, l'ordine consigliato ora è:
+
+1. **X1 e X2** (collegamenti mancanti Planning↔Piano e Meal Plan↔Oggi) — sono le due decisioni strutturali più importanti rimaste: da queste dipende come riorganizzare visivamente Piano, Planning e Meal Plan. Deciderle prima evita di lavorare due volte.
+2. **B5, B6, B7** (Reset dati rotto, note settimanali che si perdono, bottone Salva placebo) — bug concreti, priorità alta perché B6 è perdita silenziosa di dati dell'utente.
+3. **D2** (vecchio vs nuovo stile) — ancora aperto, i confronti sono pronti su Claude Design.
+4. Riorganizzazione sezione per sezione (sezione 8) — una volta chiarite X1/X2, applicare le proposte tab per tab.
+5. Kicker: estendere agli altri tab (D4) ora che lo stile è deciso (D4b).
+6. Il resto (pulizia codice morto, rifiniture minori) quando c'è tempo.
