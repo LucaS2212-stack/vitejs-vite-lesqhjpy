@@ -87,8 +87,9 @@ const DARK={
   border:"rgba(255,255,255,0.07)",borderHi:"rgba(255,255,255,0.14)",
   text:"#EDEDF0",sub:"#8A8A94",muted:"#4A4A52",
   blue:"#5B9CF6",indigo:"#8B7FF5",teal:"#2DD4BF",pink:"#FF4D8D",
-  green:"#34D074",orange:"#FFAA2E",red:"#FF3B30",purple:"#C46EF5",
+  green:"#34D074",orange:"#FFAA2E",red:"#EF233C",purple:"#C46EF5",
   f:"'Inter','Segoe UI',system-ui,sans-serif",fTight:"'Inter Tight','Inter',system-ui,sans-serif",
+  fKicker:"'Space Grotesk','Inter Tight','Inter',system-ui,sans-serif",
   shadow:"0 4px 24px rgba(0,0,0,0.45)",
   navBg:"rgba(5,5,6,0.96)",headerBg:"rgba(5,5,6,0.94)",
 };
@@ -100,6 +101,7 @@ const LIGHT={
   blue:"#3B7EF4",indigo:"#6B5CF5",teal:"#0DADA0",pink:"#E23D77",
   green:"#22C265",orange:"#F59500",red:"#E84040",purple:"#A855D4",
   f:"'Inter','Segoe UI',system-ui,sans-serif",fTight:"'Inter Tight','Inter',system-ui,sans-serif",
+  fKicker:"'Space Grotesk','Inter Tight','Inter',system-ui,sans-serif",
   shadow:"0 2px 12px rgba(0,0,0,0.07)",
   navBg:"rgba(240,240,248,0.97)",headerBg:"rgba(240,240,248,0.95)",
 };
@@ -117,8 +119,8 @@ function Card({children,style,onClick,hi,C}){
 function Kicker({label,color,C}){
   return(
     <div style={{display:"inline-flex",alignItems:"center",gap:8,marginBottom:2}}>
-      <span style={{width:7,height:7,background:"#fff",flexShrink:0}}/>
-      <span style={{fontSize:12,fontWeight:700,letterSpacing:0.6,color:color||C.red,fontFamily:C.fTight}}>{label}</span>
+      <span style={{width:13,height:13,borderRadius:3,background:"#fff",flexShrink:0}}/>
+      <span style={{fontSize:20,fontWeight:700,letterSpacing:3,color:color||C.red,fontFamily:C.fKicker,textTransform:"uppercase"}}>{label}</span>
     </div>
   );
 }
@@ -2144,7 +2146,6 @@ export default function App(){
       )}
 
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
         *{box-sizing:border-box;margin:0;padding:0;}
         input[type=date]::-webkit-calendar-picker-indicator{filter:${isDark?"invert(0.4)":"invert(0.6)"};}
         input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0;}
