@@ -118,9 +118,9 @@ function Card({children,style,onClick,hi,C}){
 }
 function Kicker({label,color,C}){
   return(
-    <div style={{display:"inline-flex",alignItems:"center",gap:8,marginBottom:2}}>
-      <span style={{width:13,height:13,borderRadius:3,background:"#fff",flexShrink:0}}/>
-      <span style={{fontSize:20,fontWeight:700,letterSpacing:3,color:color||C.red,fontFamily:C.fKicker,textTransform:"uppercase"}}>{label}</span>
+    <div style={{display:"inline-flex",alignItems:"center",gap:10,marginBottom:2}}>
+      <span style={{width:15,height:15,borderRadius:3,background:"#fff",flexShrink:0}}/>
+      <span style={{fontSize:24,fontWeight:700,letterSpacing:3,color:color||C.red,fontFamily:C.fKicker,textTransform:"uppercase"}}>{label}</span>
     </div>
   );
 }
@@ -905,8 +905,6 @@ export default function App(){
   const[editDay,setEditDay]=useState(null);
   const[planSec,setPlanSec]=useState("current");
   const[calRange,setCalRange]=useState(30);
-  const[weekOffset,setWeekOffset]=useState(0);
-  const[weekNotes,setWeekNotes]=useState({});
   const[planning,setPlanning]=useState(null);
   const[planningView,setPlanningView]=useState("setup");
   const[mealPlanOn,setMealPlanOn]=useState(null);
@@ -914,11 +912,9 @@ export default function App(){
   const[dayMeals,setDayMeals]=useState({});
   const[mealPlanOnId,setMealPlanOnId]=useState(null);
   const[mealPlanOffId,setMealPlanOffId]=useState(null);
-  const[wInput,setWInput]=useState("");
-  const[wDate,setWDate]=useState(todayStr());
-  const[wNote,setWNote]=useState("");
   const[dashPeriod,setDashPeriod]=useState("6m");
   const[showAllWeights,setShowAllWeights]=useState(false);
+  const[dayTypeMenuOpen,setDayTypeMenuOpen]=useState(false);
   const DAY_LABELS=["Lun","Mar","Mer","Gio","Ven","Sab","Dom"];
   const[dayPattern,setDayPattern]=useState(()=>{try{return JSON.parse(localStorage.getItem("atk_day_pattern"))||["on","on","on","on","off","off","off"];}catch{return["on","on","on","on","off","off","off"];}});
   useEffect(()=>{localStorage.setItem("atk_day_pattern",JSON.stringify(dayPattern));},[dayPattern]);
@@ -1052,6 +1048,8 @@ export default function App(){
   const autoType=dayPattern[weekdayIdx(today)];
   const todayType=todayData.type||autoType;
   const tpl=todayType?{cal:plan[todayType+"Cal"],p:plan[todayType+"P"],c:plan[todayType+"C"],f:plan[todayType+"F"]}:null;
+  const todayWeight=weightLog.find(w=>w.date===today)?.weight??null;
+  const todayLong=(()=>{const d=new Date(today+"T12:00:00");const wd=d.toLocaleDateString("it-IT",{weekday:"long"});const mo=d.toLocaleDateString("it-IT",{month:"long"});return `${wd.charAt(0).toUpperCase()+wd.slice(1)} · ${d.getDate()} ${mo.charAt(0).toUpperCase()+mo.slice(1)}`;})();
 
   useEffect(()=>{
     if(!user||loading)return;
@@ -1132,12 +1130,11 @@ export default function App(){
     return{date:p.date,dOn,dOff,newOn:p.onCal,newOff:p.offCal,dAvg:avgNew-avgOld,
       dOnP,dOffP,dOnC,dOffC,dOnF,dOffF};
   });
-  const weekDates=getWeekDates(weekOffset);
   const inp={background:C.bg3,border:`1px solid ${C.border}`,borderRadius:13,color:C.text,padding:"10px 13px",fontSize:15,outline:"none",width:"100%",fontFamily:C.f,boxSizing:"border-box"};
 
   const NAV=[
     {id:"dashboard",group:"Panoramica",label:"Dashboard",icon:(a)=><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={a?C.blue:C.muted} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>},
-    {id:"oggi",group:"Panoramica",label:"Oggi",icon:(a)=><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={a?C.blue:C.muted} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15.5 14"/></svg>},
+    {id:"oggi",group:"Panoramica",label:"Check-in giornaliero",icon:(a)=><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={a?C.blue:C.muted} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15.5 14"/></svg>},
     {id:"peso",group:"Progressi",label:"Peso",icon:(a)=><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={a?C.blue:C.muted} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>},
     {id:"planning",group:"Progressi",label:"Planning",icon:(a)=><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={a?C.blue:C.muted} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>},
     {id:"piano",group:"Alimentazione",label:"Piano",icon:(a)=><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={a?C.blue:C.muted} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>},
@@ -1211,7 +1208,7 @@ export default function App(){
               )}
               {!sidebarCollapsed&&(
                 <div style={{display:"flex",background:C.bg2,borderRadius:8,padding:3,gap:2}}>
-                  {[["dashboard","Dashboard"],["checkin","Check-in"]].map(([v,l])=>(
+                  {[["dashboard","Dashboard"],["checkin","Check-in sett."]].map(([v,l])=>(
                     <button key={v} onClick={()=>{setSidebarMode(v);if(v==="checkin")setTab("checkin");else setTab("dashboard");}}
                       style={{flex:1,padding:"8px 0",border:"none",borderRadius:6,background:sidebarMode===v?C.bg4:"transparent",color:sidebarMode===v?C.text:C.sub,fontSize:13,fontWeight:sidebarMode===v?600:400,cursor:"pointer",fontFamily:C.f,transition:"all 0.15s"}}>
                       {l}
@@ -1275,9 +1272,9 @@ export default function App(){
                 const heroDelta=demo?demo.avgW7delta:avgW7delta;
                 return(
                   <Card C={C} onClick={()=>setTab("peso")} style={{position:"relative"}}>
-                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:14,flexWrap:"wrap",gap:12}}>
+                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:28,flexWrap:"wrap",gap:12}}>
                       <div>
-                        <div style={typeStyle(TYPE.label,C,{textTransform:"lowercase"})}>andamento peso</div>
+                        <div style={{fontSize:14,fontWeight:700,color:"#fff",textTransform:"uppercase",letterSpacing:1.2,fontFamily:C.fTight}}>Andamento peso</div>
                         <div style={{display:"flex",alignItems:"baseline",gap:10,marginTop:6}}>
                           <span style={typeStyle(TYPE.hero,C,{color:C.text,lineHeight:1})}>{heroW??'—'} <span style={{fontSize:14,fontWeight:500,color:C.sub}}>kg</span></span>
                           {heroDelta!=null&&<Tag label={`${heroDelta>0?"+":""}${heroDelta} sett.`} color={heroDelta<0?C.green:C.orange}/>}
@@ -1324,198 +1321,108 @@ export default function App(){
                 );
               })()}
 
-              <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(240px,1fr))",gap:16}}>
-                <Card C={C} onClick={()=>setTab("piano")} style={{borderLeft:`3px solid ${C.pink}`}}>
-                  <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:14}}>
-                    <span style={{width:3,height:14,background:C.pink}}/>
-                    <span style={typeStyle(TYPE.sectionTitle,C,{fontSize:13})}>giorno ON</span>
-                  </div>
+              <Kicker label="piano" C={C}/>
+              <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(200px,1fr))",gap:20}}>
+                <Card C={C} onClick={()=>setTab("piano")}>
+                  <div style={{fontSize:14,fontWeight:700,color:"#fff",fontFamily:C.fTight,letterSpacing:1.2,textTransform:"uppercase",marginBottom:12}}>Giorno ON</div>
                   <div style={{...typeStyle(TYPE.cardValue,C),marginBottom:10}}>{plan.onCal} <span style={{fontSize:13,color:C.sub,fontWeight:400}}>kcal</span></div>
                   <div style={{display:"flex",gap:12,fontSize:12,color:C.sub}}>
                     <span>P {plan.onP}g</span><span>C {plan.onC}g</span><span>G {plan.onF}g</span>
                   </div>
                 </Card>
-                <Card C={C} onClick={()=>setTab("piano")} style={{borderLeft:`3px solid ${C.blue}`}}>
-                  <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:14}}>
-                    <span style={{width:3,height:14,background:C.blue}}/>
-                    <span style={typeStyle(TYPE.sectionTitle,C,{fontSize:13})}>giorno OFF</span>
-                  </div>
+                <Card C={C} onClick={()=>setTab("piano")}>
+                  <div style={{fontSize:14,fontWeight:700,color:"#fff",fontFamily:C.fTight,letterSpacing:1.2,textTransform:"uppercase",marginBottom:12}}>Giorno OFF</div>
                   <div style={{...typeStyle(TYPE.cardValue,C),marginBottom:10}}>{plan.offCal} <span style={{fontSize:13,color:C.sub,fontWeight:400}}>kcal</span></div>
                   <div style={{display:"flex",gap:12,fontSize:12,color:C.sub}}>
                     <span>P {plan.offP}g</span><span>C {plan.offC}g</span><span>G {plan.offF}g</span>
                   </div>
                 </Card>
-                <Card C={C} onClick={()=>setTab("oggi")} style={{borderLeft:`3px solid ${C.orange}`}}>
-                  <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:14}}>
-                    <span style={{width:3,height:14,background:C.orange}}/>
-                    <span style={typeStyle(TYPE.sectionTitle,C,{fontSize:13})}>media passi</span>
-                  </div>
+                <Card C={C} onClick={()=>setTab("oggi")}>
+                  <div style={{fontSize:14,fontWeight:700,color:"#fff",fontFamily:C.fTight,letterSpacing:1.2,textTransform:"uppercase",marginBottom:12}}>Passi settimanali</div>
                   <div style={typeStyle(TYPE.cardValue,C)}>{(demoMode?generateDemoData().avgSteps:thisWeek.avgSteps)??'—'} <span style={{fontSize:13,color:C.sub,fontWeight:400}}>passi/gg</span></div>
-                </Card>
-                <Card C={C} onClick={()=>setTab("checkin")} style={{borderLeft:`3px solid ${C.green}`}}>
-                  <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:14}}>
-                    <span style={{width:3,height:14,background:C.green}}/>
-                    <span style={{fontSize:13,fontWeight:600,color:C.text,fontFamily:C.fTight}}>ultimo check-in</span>
-                  </div>
-                  <div style={{fontSize:13,color:C.sub}}>{checkinNotes?checkinNotes.slice(0,60)+(checkinNotes.length>60?"…":""):"Nessuna nota questa settimana"}</div>
                 </Card>
               </div>
             </>)}
 
-            {/* ── OGGI ── */}
+            {/* ── CHECK-IN GIORNALIERO (ex "Oggi") ── */}
             {tab==="oggi"&&(<>
-              <Card C={C}>
-                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
-                  <div style={{display:"flex",gap:8,alignItems:"center"}}>
-                    <Tag label={todayType==="on"?"ON":"OFF"} color={todayType==="on"?C.blue:C.teal}/>
-                    {!todayData.type&&<Tag label="da pattern" color={C.muted}/>}
-                    {todayData.isEstimate&&<Tag label="Stima AI" color={C.orange}/>}
+              <Kicker label="check-in giornaliero" C={C}/>
+
+              <div style={{background:C.bg2,borderTop:`1px solid ${C.border}`,borderRight:`1px solid ${C.border}`,borderBottom:`1px solid ${C.border}`,borderLeft:`8px solid ${C.red}`,borderRadius:10,padding:24,boxShadow:C.shadow,marginBottom:4}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:18}}>
+                  <div>
+                    <div style={{fontSize:22,fontWeight:800,color:"#fff",textTransform:"uppercase",letterSpacing:0.5,fontFamily:C.fTight}}>Oggi</div>
+                    <div style={{fontSize:13,fontWeight:600,color:C.sub,textTransform:"uppercase",letterSpacing:0.8,marginTop:2}}>{todayLong}</div>
                   </div>
-                  <button onClick={()=>{const nt=todayType==="on"?"off":"on";upsertDay(today,{type:nt,calories:plan[nt+"Cal"],protein:plan[nt+"P"],carbs:plan[nt+"C"],fat:plan[nt+"F"]});showToast(`Eccezione: oggi ${nt==="on"?"ON":"OFF"}`);}}
-                    style={{background:"none",border:"none",color:C.sub,fontSize:14,cursor:"pointer",fontFamily:C.f}}>Eccezione oggi</button>
+                  <div style={{position:"relative"}}>
+                    <button onClick={()=>setDayTypeMenuOpen(p=>!p)}
+                      style={{display:"flex",alignItems:"center",gap:10,background:C.bg3,border:`1.5px solid ${C.red}66`,borderRadius:10,padding:"11px 16px",fontSize:16,fontWeight:700,fontFamily:C.fTight,color:C.text,cursor:"pointer",boxShadow:`0 0 14px 2px ${C.red}73,0 0 32px 6px ${C.red}33`}}>
+                      {todayType==="on"?"TD":"NTD"}
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={C.red} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{transform:dayTypeMenuOpen?"rotate(180deg)":"none",transition:"transform 0.15s"}}><polyline points="6 9 12 15 18 9"/></svg>
+                    </button>
+                    {dayTypeMenuOpen&&(
+                      <>
+                        <div onClick={()=>setDayTypeMenuOpen(false)} style={{position:"fixed",inset:0,zIndex:9}}/>
+                        <div style={{position:"absolute",top:"calc(100% + 8px)",right:0,background:C.bg3,border:`1px solid ${C.borderHi}`,borderRadius:10,overflow:"hidden",boxShadow:"0 12px 28px rgba(0,0,0,0.5)",zIndex:10,minWidth:120}}>
+                          {[["on","TD"],["off","NTD"]].map(([v,l])=>(
+                            <button key={v} onClick={()=>{upsertDay(today,{type:v,calories:plan[v+"Cal"],protein:plan[v+"P"],carbs:plan[v+"C"],fat:plan[v+"F"]});showToast(`Oggi: ${l}`);setDayTypeMenuOpen(false);}}
+                              style={{display:"block",width:"100%",textAlign:"left",padding:"10px 16px",background:todayType===v?`${C.red}18`:"none",border:"none",color:todayType===v?C.red:C.text,fontSize:15,fontWeight:todayType===v?700:500,fontFamily:C.fTight,cursor:"pointer"}}>
+                              {l}
+                            </button>
+                          ))}
+                        </div>
+                      </>
+                    )}
+                  </div>
                 </div>
-                <div style={{marginBottom:14}}>
-                  <div style={{display:"flex",justifyContent:"space-between",marginBottom:5}}>
-                    <span style={{fontSize:15,fontWeight:600,color:C.text}}>{todayData.calories??'—'} <span style={{color:C.sub,fontWeight:400,fontSize:14}}>/ {tpl?.cal} kcal</span></span>
-                    <span style={{fontSize:14,color:C.sub}}>{tpl?.cal?`${Math.round(((todayData.calories||0)/tpl.cal)*100)}%`:""}</span>
-                  </div>
-                  <div style={{height:6,background:C.bg3,borderRadius:99,overflow:"hidden"}}>
-                    <div style={{height:6,width:`${tpl?.cal?Math.min(100,((todayData.calories||0)/tpl.cal)*100):0}%`,background:`linear-gradient(90deg,${C.blue},${C.indigo})`,borderRadius:99,transition:"width 0.5s"}}/>
-                  </div>
+                <div style={{display:"flex",alignItems:"baseline",gap:6}}>
+                  <input type="number" key={`calories-${today}`} defaultValue={todayData.calories??""} onBlur={e=>upsertDay(today,{calories:e.target.value?+e.target.value:null})}
+                    placeholder={tpl?String(tpl.cal):"0"}
+                    style={{background:"none",border:"none",outline:"none",color:C.text,fontFamily:C.fTight,fontSize:44,fontWeight:800,width:160,padding:0}}/>
+                  <span style={{fontSize:16,color:C.sub,fontWeight:500}}>kcal</span>
                 </div>
-                <MBar C={C} label="Proteine" value={todayData.protein} max={tpl?.p} color={C.green}/>
-                <MBar C={C} label="Carboidrati" value={todayData.carbs} max={tpl?.c} color={C.orange}/>
-                <MBar C={C} label="Grassi" value={todayData.fat} max={tpl?.f} color={C.purple}/>
-                {todayData.note&&<div style={{marginTop:10,fontSize:14,color:C.sub,fontStyle:"italic"}}>{todayData.note}</div>}
-              </Card>
-              <Card C={C}>
-                <div style={{fontSize:16,fontWeight:700,color:C.text,marginBottom:4}}>Inserimento</div>
-                <div style={{fontSize:13,color:C.muted,marginBottom:18}}>Salva automaticamente all'uscita dal campo</div>
-                <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(120px,1fr))",gap:12,marginBottom:12}}>
-                  {[["Calorie","calories","kcal",C.blue],["Proteine","protein","g",C.green],["Carboidrati","carbs","g",C.orange],["Grassi","fat","g",C.purple]].map(([l,k,u,color])=>(
+                <div style={{display:"flex",gap:40,marginTop:20,paddingTop:20,borderTop:"1px solid rgba(255,255,255,0.22)"}}>
+                  {[["Proteine","protein","p",C.green],["Carboidrati","carbs","c",C.blue],["Grassi","fat","f",C.red]].map(([l,k,tk,color])=>(
                     <div key={k}>
-                      <div style={{fontSize:14,color:C.sub,marginBottom:6,fontWeight:500}}>{l}</div>
-                      <div style={{position:"relative"}}>
+                      <div style={{display:"flex",alignItems:"baseline"}}>
                         <input type="number" key={`${k}-${today}`} defaultValue={todayData[k]??""} onBlur={e=>upsertDay(today,{[k]:e.target.value?+e.target.value:null})}
-                          placeholder={tpl?String(tpl[k[0]]):"0"}
-                          style={{...inp,paddingRight:36}}
-                          onFocus={e=>{e.target.style.borderColor=color;e.target.style.boxShadow=`0 0 0 3px ${color}14`;}}
-                          onBlur={e=>{e.target.style.borderColor=C.border;e.target.style.boxShadow="none";upsertDay(today,{[k]:e.target.value?+e.target.value:null});}}/>
-                        <span style={{position:"absolute",right:11,top:"50%",transform:"translateY(-50%)",fontSize:13,color:C.muted,pointerEvents:"none"}}>{u}</span>
+                          placeholder={tpl?String(tpl[tk]):"0"}
+                          style={{background:"none",border:"none",outline:"none",color,fontFamily:C.fTight,fontSize:20,fontWeight:800,width:48,padding:0}}/>
+                        <span style={{fontSize:13,fontWeight:600,color:"#fff",marginLeft:1}}>g</span>
                       </div>
+                      <div style={{fontSize:11,color:C.muted,marginTop:4,textTransform:"uppercase",letterSpacing:0.5}}>{l}</div>
                     </div>
                   ))}
                 </div>
-                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:12}}>
-                  <div>
-                    <div style={{fontSize:13,color:C.sub,marginBottom:6,fontWeight:500}}>Passi</div>
-                    <input type="number" key={`steps-${today}`} defaultValue={todayData.steps??""} onBlur={e=>upsertDay(today,{steps:e.target.value?+e.target.value:null})} placeholder="8000" style={inp}/>
+              </div>
+
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:24,marginTop:24,marginBottom:4}}>
+                <div style={{background:C.bg2,borderTop:`1px solid ${C.border}`,borderRight:`1px solid ${C.border}`,borderBottom:`1px solid ${C.border}`,borderLeft:`8px solid ${C.red}`,borderRadius:2,padding:"16px 18px"}}>
+                  <div style={{fontSize:14,color:"#fff",fontWeight:600,fontFamily:C.fTight,letterSpacing:2,textTransform:"uppercase",marginBottom:9}}>Passi</div>
+                  <input type="number" key={`steps-${today}`} defaultValue={todayData.steps??""} onBlur={e=>upsertDay(today,{steps:e.target.value?+e.target.value:null})} placeholder="8000"
+                    style={{background:"none",border:"none",outline:"none",color:C.text,fontFamily:C.fTight,fontSize:27,fontWeight:800,width:"100%",padding:0}}/>
+                </div>
+                <div style={{background:C.bg2,borderTop:`1px solid ${C.border}`,borderRight:`1px solid ${C.border}`,borderBottom:`1px solid ${C.border}`,borderLeft:`8px solid ${C.red}`,borderRadius:2,padding:"16px 18px"}}>
+                  <div style={{fontSize:14,color:"#fff",fontWeight:600,fontFamily:C.fTight,letterSpacing:2,textTransform:"uppercase",marginBottom:9}}>Peso di oggi</div>
+                  <div style={{display:"flex",alignItems:"baseline",gap:6}}>
+                    <input type="number" step="0.1" key={`weight-${today}`} defaultValue={todayWeight??""} onBlur={e=>e.target.value&&upsertWeight(today,e.target.value)} placeholder="0.0"
+                      style={{background:"none",border:"none",outline:"none",color:C.text,fontFamily:C.fTight,fontSize:27,fontWeight:800,width:74,padding:0}}/>
+                    <span style={{fontSize:13,color:C.sub,fontWeight:400}}>kg</span>
                   </div>
-                  <div>
-                    <div style={{fontSize:13,color:C.sub,marginBottom:6,fontWeight:500}}>Cardio (min, opzionale)</div>
-                    <input type="number" key={`cardio-${today}`} defaultValue={todayData.cardioMinutes??""} onBlur={e=>upsertDay(today,{cardioMinutes:e.target.value?+e.target.value:null})} placeholder="0" style={inp}/>
-                  </div>
                 </div>
-                <div style={{marginBottom:16}}>
-                  <div style={{fontSize:13,color:C.sub,marginBottom:6,fontWeight:500}}>Note</div>
-                  <input value={todayData.note??""} onChange={e=>upsertDay(today,{note:e.target.value})} placeholder="Refeed, sgarro, pasto fuori…" style={inp}/>
-                </div>
-                <button onClick={()=>showToast("Dati salvati ✓")} style={{width:"100%",padding:12,background:`linear-gradient(135deg,${C.blue},${C.indigo})`,border:"none",borderRadius:12,color:"#fff",fontSize:15,fontWeight:600,cursor:"pointer",fontFamily:C.f,letterSpacing:0.2}}>
-                  Salva
-                </button>
-              </Card>
-              <Card C={C}>
-                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
-                  <button onClick={()=>setWeekOffset(p=>p-1)} style={{background:"none",border:`1px solid ${C.border}`,borderRadius:8,width:30,height:30,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:C.sub}}>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
-                  </button>
-                  <div style={{display:"flex",alignItems:"center",gap:8}}>
-                    <span style={{fontSize:14,color:weekOffset===0?C.sub:C.blue,fontWeight:weekOffset===0?400:500}}>
-                      {weekOffset===0?"Questa settimana":weekOffset===-1?"Settimana scorsa":`${Math.abs(weekOffset)} sett. fa`}
-                    </span>
-                    <input type="date" onChange={e=>{
-                      if(!e.target.value)return;
-                      const sel=new Date(e.target.value+"T12:00:00");
-                      const now=new Date();
-                      const diffMs=sel-now;
-                      const diffWeeks=Math.floor(diffMs/(7*24*3600*1000));
-                      setWeekOffset(Math.min(0,diffWeeks));
-                    }}
-                    style={{background:"none",border:`1px solid ${C.border}`,borderRadius:8,color:C.sub,fontSize:12,padding:"3px 6px",outline:"none",cursor:"pointer",fontFamily:C.f,width:32,opacity:0.6}}
-                    title="Vai a data"/>
-                  </div>
-                  <button onClick={()=>setWeekOffset(p=>Math.min(0,p+1))} disabled={weekOffset===0}
-                    style={{background:"none",border:`1px solid ${weekOffset===0?C.bg3:C.border}`,borderRadius:8,width:30,height:30,display:"flex",alignItems:"center",justifyContent:"center",cursor:weekOffset===0?"default":"pointer",color:weekOffset===0?C.muted:C.sub,opacity:weekOffset===0?0.4:1}}>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
-                  </button>
-                </div>
-                <div style={{display:"flex",gap:5}}>
-                  {weekDates.map((date,i)=>{
-                    const d=days[date]||{},isT=date===today;
-                    const maxC=Math.max(...weekDates.map(dd=>days[dd]?.calories||0),1);
-                    const h=d.calories?Math.max(10,(d.calories/maxC)*56):5;
-                    const barColor=d.type==="on"?C.blue:d.type==="off"?C.teal:isT?C.blue:C.bg3;
-                    return(
-                      <div key={i} onClick={()=>setEditDay(date)} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:5,cursor:"pointer"}}>
-                        <div style={{fontSize:11,color:C.muted,marginBottom:2}}>{d.calories||""}</div>
-                        <div style={{width:"100%",height:60,display:"flex",alignItems:"flex-end"}}>
-                          <div style={{width:"100%",height:h,borderRadius:6,background:barColor,opacity:isT?1:0.6,outline:isT?`2px solid ${C.blue}`:"none",outlineOffset:2,transition:"height 0.3s ease"}}/>
-                        </div>
-                        <span style={{fontSize:11,color:isT?C.blue:C.muted,fontWeight:isT?600:400}}>{fmtDL(date)}</span>
-                      </div>
-                    );
-                  })}
-                </div>
-              </Card>
-              {/* Storico settimanale calorie */}
-              <Card C={C}>
-                <div style={{fontSize:15,fontWeight:600,color:C.text,marginBottom:14}}>Storico settimanale</div>
-                {weeklyStats.slice().reverse().filter(w=>w.avgCal).map((w,i)=>{
-                  const wKey=`week_${i}`;
-                  const wDates=getWeekDates(-(weeklyStats.filter(x=>x.avgCal).length-1-i));
-                  const isCurrent=w.label==="Questa";
-                  return(
-                    <div key={i} style={{padding:"14px 0",borderBottom:i<weeklyStats.filter(x=>x.avgCal).length-1?`1px solid ${C.border}`:"none"}}>
-                      <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:10}}>
-                        <div>
-                          <div style={{fontSize:15,color:isCurrent?C.blue:C.text,fontWeight:isCurrent?700:500,marginBottom:6}}>
-                            {isCurrent?"Questa settimana":w.label==="Scorsa"?"Scorsa settimana":w.label}
-                          </div>
-                          <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
-                            {w.onCount>0&&w.avgCalOn&&<span style={{fontSize:13,background:`${C.blue}14`,color:C.blue,borderRadius:6,padding:"2px 7px",fontWeight:500}}>{w.onCount} ON · {w.avgCalOn} kcal</span>}
-                            {w.offCount>0&&w.avgCalOff&&<span style={{fontSize:13,background:`${C.teal}14`,color:C.teal,borderRadius:6,padding:"2px 7px",fontWeight:500}}>{w.offCount} OFF · {w.avgCalOff} kcal</span>}
-                          </div>
-                        </div>
-                        <div style={{textAlign:"right"}}>
-                          <div style={{fontSize:22,fontWeight:700,color:isCurrent?C.blue:C.text,letterSpacing:-0.3}}>{w.avgCal}<span style={{fontSize:14,color:C.sub,marginLeft:3,fontWeight:400}}>kcal</span></div>
-                          <div style={{fontSize:12,color:C.muted,marginBottom:3}}>media totale</div>
-                          <div style={{display:"flex",gap:6,justifyContent:"flex-end",flexWrap:"wrap"}}>
-                            {w.avgProt&&<span style={{fontSize:13,color:C.green,fontWeight:500}}>P {w.avgProt}g</span>}
-                            {w.avgCarb&&<span style={{fontSize:13,color:C.orange,fontWeight:500}}>C {w.avgCarb}g</span>}
-                            {w.avgFat&&<span style={{fontSize:13,color:C.purple,fontWeight:500}}>G {w.avgFat}g</span>}
-                          </div>
-                        </div>
-                      </div>
-                      <input
-                        defaultValue={weekNotes[wKey]||""}
-                        onBlur={e=>setWeekNotes(p=>({...p,[wKey]:e.target.value}))}
-                        placeholder="Note settimana…"
-                        style={{...inp,fontSize:14,padding:"7px 10px",color:C.sub,background:C.bg2,border:`1px solid ${C.border}`}}
-                        onFocus={e=>{e.target.style.borderColor=C.blue;e.target.style.color=C.text;}}
-                        onBlur2={e=>{e.target.style.borderColor=C.border;}}
-                      />
-                    </div>
-                  );
-                })}
-                {weeklyStats.filter(w=>w.avgCal).length===0&&(
-                  <div style={{fontSize:14,color:C.muted,textAlign:"center",padding:"16px 0"}}>Nessuna settimana con dati ancora.</div>
-                )}
-              </Card>
+              </div>
+
+              <div style={{background:C.bg2,border:`1px solid ${C.border}`,borderRadius:10,padding:24,marginTop:20,marginBottom:4}}>
+                <div style={{fontSize:14,color:"#fff",fontWeight:600,fontFamily:C.fTight,letterSpacing:2,textTransform:"uppercase",marginBottom:9}}>Note</div>
+                <textarea defaultValue={todayData.note??""} onBlur={e=>upsertDay(today,{note:e.target.value})} placeholder="Refeed, sgarro, pasto fuori…" rows={2}
+                  style={{...inp,resize:"none",fontFamily:C.f}}/>
+              </div>
+
             </>)}
 
             {/* ── PESO ── */}
             {tab==="peso"&&(<>
-              <Kicker label="misurazione peso giornaliera" C={C}/>
+              <Kicker label="andamento peso" C={C}/>
               <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(220px,1fr))",gap:16}}>
                 <Card C={C} style={{padding:"14px 22px"}}>
                   <div style={{fontSize:13,color:C.text,marginBottom:6,fontWeight:500}}>peso giornaliero</div>
@@ -1540,27 +1447,6 @@ export default function App(){
                   <KPI C={C} label="vs sett. prec." value={avgW7delta!=null?(avgW7delta>0?`+${avgW7delta}`:avgW7delta):null} unit="kg" color={avgW7delta!=null?(avgW7delta<0?C.green:C.orange):C.muted}/>
                 </div>
               )}
-              <Card C={C} hi>
-                <div style={{fontSize:14,color:C.sub,marginBottom:14}}>Nuova pesata</div>
-                <div style={{display:"flex",gap:10,marginBottom:10}}>
-                  <div style={{flex:1}}>
-                    <div style={{fontSize:12,color:C.muted,marginBottom:4,fontWeight:500}}>PESO (KG)</div>
-                    <input type="number" step="0.1" value={wInput} onChange={e=>setWInput(e.target.value)} placeholder="83.2" style={inp}/>
-                  </div>
-                  <div style={{flex:1}}>
-                    <div style={{fontSize:12,color:C.muted,marginBottom:4,fontWeight:500}}>DATA</div>
-                    <input type="date" value={wDate} onChange={e=>setWDate(e.target.value)} style={inp}/>
-                  </div>
-                </div>
-                <div style={{marginBottom:10}}>
-                  <div style={{fontSize:12,color:C.muted,marginBottom:4,fontWeight:500}}>NOTE (opzionale)</div>
-                  <input value={wNote} onChange={e=>setWNote(e.target.value)} placeholder="Es: mattina a digiuno…" style={inp}/>
-                </div>
-                <button onClick={()=>{if(!wInput)return;upsertWeight(wDate,wInput,wNote);setWInput("");setWNote("");showToast("Peso salvato");}}
-                  style={{width:"100%",padding:11,background:`linear-gradient(135deg,${C.pink},${C.purple})`,border:"none",borderRadius:6,color:"#fff",fontSize:15,fontWeight:600,cursor:"pointer",fontFamily:C.f}}>
-                  Salva
-                </button>
-              </Card>
               {weightChart.length>1&&(
                 <Card C={C}>
                   <Kicker label="grafico" C={C}/>
