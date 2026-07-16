@@ -8,6 +8,10 @@ Athlete Tracker — a React/Vite + Supabase app for tracking nutrition and train
 
 Before starting work, read `roadmap-athlete-tracker.md` in this same folder — it tracks design decisions, known inconsistencies, and open items agreed with the user.
 
+## Git workflow
+
+`main` is the production branch — Vercel auto-deploys from it. **Never push to `main` without the user's explicit go-ahead for that specific push**; the user does not want every small commit (docs, WIP, experiments) triggering a production deploy. Do all normal work on `dev` (already set up, tracks `origin/dev`) and only merge/push to `main` when the user asks for something to actually go live. Pushing `dev` is lower-stakes (Vercel preview deploy, not production) but still confirm before pushing if unsure.
+
 ## Commands
 
 Run from this directory (`vitejs-vite-lesqhjpy-main/` — this is the actual project root, not the parent folder):
