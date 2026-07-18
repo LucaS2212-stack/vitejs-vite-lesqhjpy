@@ -915,9 +915,16 @@ export default function App(){
   const[dashPeriod,setDashPeriod]=useState("6m");
   const[showAllWeights,setShowAllWeights]=useState(false);
   const[dayTypeMenuOpen,setDayTypeMenuOpen]=useState(false);
+  const[trainingTypeMenuOpen,setTrainingTypeMenuOpen]=useState(false);
   const DAY_LABELS=["Lun","Mar","Mer","Gio","Ven","Sab","Dom"];
   const[dayPattern,setDayPattern]=useState(()=>{try{return JSON.parse(localStorage.getItem("atk_day_pattern"))||["on","on","on","on","off","off","off"];}catch{return["on","on","on","on","off","off","off"];}});
   useEffect(()=>{localStorage.setItem("atk_day_pattern",JSON.stringify(dayPattern));},[dayPattern]);
+  const TRAINING_COLORS=["blue","teal","purple","orange","green","pink"];
+  const[trainingTypes,setTrainingTypes]=useState(()=>{try{return JSON.parse(localStorage.getItem("atk_training_types"))||[{id:"t1",name:"Upper",color:"blue"},{id:"t2",name:"Lower",color:"teal"},{id:"t3",name:"Riposo",color:"muted"}];}catch{return[{id:"t1",name:"Upper",color:"blue"},{id:"t2",name:"Lower",color:"teal"},{id:"t3",name:"Riposo",color:"muted"}];}});
+  useEffect(()=>{localStorage.setItem("atk_training_types",JSON.stringify(trainingTypes));},[trainingTypes]);
+  const[trainingPattern,setTrainingPattern]=useState(()=>{try{return JSON.parse(localStorage.getItem("atk_training_pattern"))||["t1","t2","t3","t1","t2","t3","t3"];}catch{return["t1","t2","t3","t1","t2","t3","t3"];}});
+  useEffect(()=>{localStorage.setItem("atk_training_pattern",JSON.stringify(trainingPattern));},[trainingPattern]);
+  const[trainingDayOpen,setTrainingDayOpen]=useState(null);
 
   useEffect(()=>{localStorage.setItem("atk_theme",isDark?"dark":"light");},[isDark]);
   useEffect(()=>{localStorage.setItem("atk_sidebar",sidebarCollapsed?"collapsed":"expanded");},[sidebarCollapsed]);
@@ -935,7 +942,7 @@ export default function App(){
           sb.from("athlete_planning").select("*").eq("user_id",user.id).order("created_at",{ascending:false}).limit(1),
           sb.from("athlete_meal_plan").select("*").eq("user_id",user.id),
         ]);
-        if(dr.data){const map={};dr.data.forEach(r=>{map[r.date]={type:r.type,calories:r.calories,protein:r.protein,carbs:r.carbs,fat:r.fat,steps:r.steps,note:r.note,isEstimate:r.is_estimate,cardioMinutes:r.cardio_minutes};});setDays(map);}
+        if(dr.data){const map={};dr.data.forEach(r=>{map[r.date]={type:r.type,calories:r.calories,protein:r.protein,carbs:r.carbs,fat:r.fat,steps:r.steps,note:r.note,isEstimate:r.is_estimate,cardioMinutes:r.cardio_minutes,trainingType:r.training_type};});setDays(map);}
         if(wr.data)setWeightLog(wr.data.map(r=>({date:r.date,weight:r.weight,note:r.note})));
         if(pr.data&&pr.data.length){
           const sorted=[...pr.data].sort((a,b)=>a.date.localeCompare(b.date));
@@ -995,9 +1002,9 @@ export default function App(){
     const merged={...(days[date]||{}),...data};
     const existing=await sb.from("athlete_days").select("id").eq("date",date).eq("user_id",user.id).maybeSingle();
     if(existing.data){
-      await sb.from("athlete_days").update({type:merged.type,calories:merged.calories,protein:merged.protein,carbs:merged.carbs,fat:merged.fat,steps:merged.steps,note:merged.note,is_estimate:merged.isEstimate,cardio_minutes:merged.cardioMinutes}).eq("date",date).eq("user_id",user.id);
+      await sb.from("athlete_days").update({type:merged.type,calories:merged.calories,protein:merged.protein,carbs:merged.carbs,fat:merged.fat,steps:merged.steps,note:merged.note,is_estimate:merged.isEstimate,cardio_minutes:merged.cardioMinutes,training_type:merged.trainingType}).eq("date",date).eq("user_id",user.id);
     }else{
-      await sb.from("athlete_days").insert({date,type:merged.type,calories:merged.calories,protein:merged.protein,carbs:merged.carbs,fat:merged.fat,steps:merged.steps,note:merged.note,is_estimate:merged.isEstimate,cardio_minutes:merged.cardioMinutes,user_id:user.id});
+      await sb.from("athlete_days").insert({date,type:merged.type,calories:merged.calories,protein:merged.protein,carbs:merged.carbs,fat:merged.fat,steps:merged.steps,note:merged.note,is_estimate:merged.isEstimate,cardio_minutes:merged.cardioMinutes,training_type:merged.trainingType,user_id:user.id});
     }
     setSyncing(false);
   }
@@ -1048,6 +1055,9 @@ export default function App(){
   const autoType=dayPattern[weekdayIdx(today)];
   const todayType=todayData.type||autoType;
   const tpl=todayType?{cal:plan[todayType+"Cal"],p:plan[todayType+"P"],c:plan[todayType+"C"],f:plan[todayType+"F"]}:null;
+  const autoTrainingTypeId=trainingPattern[weekdayIdx(today)];
+  const todayTrainingTypeId=todayData.trainingType||autoTrainingTypeId;
+  const todayTrainingType=trainingTypes.find(t=>t.id===todayTrainingTypeId)||null;
   const todayWeight=weightLog.find(w=>w.date===today)?.weight??null;
   const todayLong=(()=>{const d=new Date(today+"T12:00:00");const wd=d.toLocaleDateString("it-IT",{weekday:"long"});const mo=d.toLocaleDateString("it-IT",{month:"long"});return `${wd.charAt(0).toUpperCase()+wd.slice(1)} · ${d.getDate()} ${mo.charAt(0).toUpperCase()+mo.slice(1)}`;})();
 
@@ -1353,6 +1363,31 @@ export default function App(){
                   <div>
                     <div style={{fontSize:22,fontWeight:800,color:"#fff",textTransform:"uppercase",letterSpacing:0.5,fontFamily:C.fTight}}>Oggi</div>
                     <div style={{fontSize:13,fontWeight:600,color:C.sub,textTransform:"uppercase",letterSpacing:0.8,marginTop:2}}>{todayLong}</div>
+                    {trainingTypes.length>0&&(
+                      <div style={{position:"relative",marginTop:10}}>
+                        <button onClick={()=>setTrainingTypeMenuOpen(p=>!p)}
+                          style={{display:"inline-flex",alignItems:"center",gap:6,background:"none",border:`1px solid ${C.border}`,borderRadius:8,padding:"5px 10px",cursor:"pointer",fontFamily:C.f}}>
+                          <span style={{width:7,height:7,borderRadius:"50%",background:todayTrainingType?(C[todayTrainingType.color]||C.muted):C.muted,flexShrink:0}}/>
+                          <span style={{fontSize:12,fontWeight:600,color:C.sub}}>{todayTrainingType?.name||"—"}</span>
+                        </button>
+                        {trainingTypeMenuOpen&&(
+                          <>
+                            <div onClick={()=>setTrainingTypeMenuOpen(false)} style={{position:"fixed",inset:0,zIndex:9}}/>
+                            <div style={{position:"absolute",top:"calc(100% + 6px)",left:0,minWidth:130,background:C.bg3,border:`1px solid ${C.borderHi}`,borderRadius:10,overflow:"hidden",boxShadow:"0 12px 28px rgba(0,0,0,0.5)",zIndex:10}}>
+                              {trainingTypes.map(tt=>{
+                                const c=C[tt.color]||C.muted;
+                                return(
+                                  <button key={tt.id} onClick={()=>{upsertDay(today,{trainingType:tt.id});setTrainingTypeMenuOpen(false);}}
+                                    style={{display:"flex",alignItems:"center",gap:8,width:"100%",textAlign:"left",padding:"9px 12px",background:todayTrainingTypeId===tt.id?`${c}18`:"none",border:"none",color:todayTrainingTypeId===tt.id?c:C.text,fontSize:13,fontWeight:todayTrainingTypeId===tt.id?700:500,fontFamily:C.f,cursor:"pointer"}}>
+                                    <span style={{width:7,height:7,borderRadius:"50%",background:c}}/>{tt.name}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    )}
                   </div>
                   <div style={{position:"relative"}}>
                     <button onClick={()=>setDayTypeMenuOpen(p=>!p)}
@@ -1525,6 +1560,73 @@ export default function App(){
                     })}
                   </div>
                 </Card>
+
+                <Kicker label="piano" C={C}/>
+                <Card C={C}>
+                  <div style={{fontSize:16,fontWeight:700,color:C.text,marginBottom:4}}>Tipi di allenamento</div>
+                  <div style={{fontSize:13,color:C.muted,marginBottom:16}}>Aggiungi, rinomina o togli i tipi — usali per costruire il tuo split (es. Upper/Lower, o Push/Pull/Legs)</div>
+                  <div style={{display:"flex",flexWrap:"wrap",gap:8}}>
+                    {trainingTypes.map(t=>{
+                      const color=C[t.color]||C.muted;
+                      return(
+                        <div key={t.id} style={{display:"flex",alignItems:"center",gap:8,background:C.bg3,border:`1px solid ${C.border}`,borderRadius:10,padding:"8px 8px 8px 14px"}}>
+                          <span style={{width:8,height:8,borderRadius:"50%",background:color,flexShrink:0}}/>
+                          <input value={t.name} onChange={e=>setTrainingTypes(p=>p.map(x=>x.id===t.id?{...x,name:e.target.value}:x))}
+                            style={{background:"none",border:"none",color:C.text,fontFamily:C.f,fontSize:14,fontWeight:500,outline:"none",width:80}}/>
+                          <button onClick={()=>{
+                            const fallback=trainingTypes.find(x=>x.id!==t.id)?.id||"";
+                            setTrainingTypes(p=>p.filter(x=>x.id!==t.id));
+                            setTrainingPattern(p=>p.map(id=>id===t.id?fallback:id));
+                          }} style={{background:"none",border:"none",color:C.muted,fontSize:16,cursor:"pointer",lineHeight:1,padding:2}}>×</button>
+                        </div>
+                      );
+                    })}
+                    <button onClick={()=>{
+                      const id=`t${Date.now()}`;
+                      const color=TRAINING_COLORS[trainingTypes.length%TRAINING_COLORS.length];
+                      setTrainingTypes(p=>[...p,{id,name:"Nuovo",color}]);
+                    }} style={{display:"flex",alignItems:"center",gap:6,background:"none",border:`1.5px dashed ${C.border}`,borderRadius:10,padding:"8px 14px",color:C.sub,fontSize:14,cursor:"pointer",fontFamily:C.f}}>
+                      + Aggiungi tipo
+                    </button>
+                  </div>
+                </Card>
+
+                <div style={{background:C.bg2,borderTop:`1px solid ${C.border}`,borderRight:`1px solid ${C.border}`,borderBottom:`1px solid ${C.border}`,borderLeft:`8px solid ${C.red}`,borderRadius:10,padding:24,boxShadow:C.shadow,marginBottom:20}}>
+                  <div style={{fontSize:14,fontWeight:700,color:C.text,textTransform:"uppercase",letterSpacing:1.2,fontFamily:C.fTight,marginBottom:20}}>Pattern settimanale allenamento</div>
+                  <div style={{display:"flex",height:96,borderRadius:8,overflow:"hidden"}}>
+                    {DAY_LABELS.map((lbl,i)=>{
+                      const typeId=trainingPattern[i];
+                      const t=trainingTypes.find(x=>x.id===typeId);
+                      const color=t?(C[t.color]||C.muted):C.muted;
+                      return(
+                        <div key={i} style={{position:"relative",flex:1}}>
+                          <div onClick={()=>setTrainingDayOpen(p=>p===i?null:i)}
+                            style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:6,height:"100%",background:`${color}2A`,borderRight:i<6?`3px solid ${C.bg0}`:"none",cursor:"pointer"}}>
+                            <div style={{fontSize:11,color:C.sub,fontWeight:600,textTransform:"uppercase",letterSpacing:0.5}}>{lbl}</div>
+                            <div style={{fontSize:14,fontWeight:800,fontFamily:C.fTight,color}}>{t?.name||"—"}</div>
+                          </div>
+                          {trainingDayOpen===i&&(
+                            <>
+                              <div onClick={()=>setTrainingDayOpen(null)} style={{position:"fixed",inset:0,zIndex:9}}/>
+                              <div style={{position:"absolute",top:"calc(100% + 8px)",left:0,minWidth:130,background:C.bg3,border:`1px solid ${C.borderHi}`,borderRadius:10,overflow:"hidden",boxShadow:"0 12px 28px rgba(0,0,0,0.5)",zIndex:10}}>
+                                {trainingTypes.map(tt=>{
+                                  const c=C[tt.color]||C.muted;
+                                  return(
+                                    <button key={tt.id} onClick={()=>{setTrainingPattern(p=>p.map((v,j)=>j===i?tt.id:v));setTrainingDayOpen(null);}}
+                                      style={{display:"flex",alignItems:"center",gap:8,width:"100%",textAlign:"left",padding:"9px 12px",background:typeId===tt.id?`${c}18`:"none",border:"none",color:typeId===tt.id?c:C.text,fontSize:13,fontWeight:typeId===tt.id?700:500,fontFamily:C.f,cursor:"pointer"}}>
+                                      <span style={{width:7,height:7,borderRadius:"50%",background:c}}/>{tt.name}
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
                 {[["on","Giorni ON",C.blue],["off","Giorni OFF",C.teal]].map(([type,label,color])=>(
                   <Card key={type} C={C} style={{border:`1.5px solid ${color}30`}}>
                     <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:18}}>
