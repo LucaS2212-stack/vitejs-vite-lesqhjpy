@@ -222,6 +222,25 @@ Richiesto dall'utente il 2026-07-16, dopo aver deciso di non aggiungere per ora 
 **Punti deboli**: sezione compatta e già abbastanza ordinata. Le medie di proteine/carbo/grassi settimanali sono già calcolate altrove (`weeklyStats`) ma non mostrate qui, mentre sarebbe il posto naturale per un riepilogo macro completo della settimana.
 **Come riorganizzare**: aggiungere le 3 medie macro mancanti alla KPI row (basta riusare `weeklyStats[7].avgProt/avgCarb/avgFat`, già calcolati, zero lavoro di logica nuova).
 
+## 9. Nuove funzionalità da sheet professionale (2026-07-17)
+
+L'utente ha condiviso screenshot di uno sheet usato da un coach professionista per bodybuilder agonisti. Fatta un'analisi dettagliata fase-per-fase con domande di precisione (vedi anche il piano completo salvato in `C:\Users\luca.sist\.claude\plans\iterative-wishing-quasar.md` per tutti i dettagli e le tabelle Decisione). Riassunto delle 5 aree da costruire, in ordine di dipendenza:
+
+| # | Priorità | Stato | Voce | Descrizione sintetica |
+|---|---|---|---|---|
+| F1 | 🟡 | ⬜ | Pattern settimanale "tipo allenamento" | Nel tab Piano, accanto al pattern ON/OFF: lista di tipi allenamento personalizzabile dall'utente (es. Upper/Lower o Push/Pull/Legs, numero variabile) assegnata ai 7 giorni della settimana. |
+| F2 | 🟡 | ⬜ | Tipo-allenamento nel Check-in giornaliero | Auto-compilato dal pattern F1, modificabile al volo come eccezione per il singolo giorno (stesso meccanismo di "Eccezione oggi" per ON/OFF). Dipende da F1. |
+| F3 | 🟢 | ⬜ | Meal Plan: campo "momento" per pasto | Tendina libera per pasto (Nessuno/Prima/Durante/Dopo allenamento), mostrata in evidenza nell'intestazione del pasto. Indipendente dal resto, facile da fare in isolamento. |
+| F4 | 🟡 | ⬜ | Planning: nuovi tipi Priming e Mini Diet | 2 nuovi tipi piano oltre ai 4 esistenti. Priming = calorie piatte (stesso calcolo di Mantenimento). Mini Diet = cut più aggressivo (percentuale di deficit da fissare in fase di implementazione, valore di partenza proposto 20%). |
+| F5 | 🔴 | ⬜ | Planning: storico consultabile (non solo ultimo piano) | Prerequisito tecnico per F6: oggi la query carica solo l'ultimo piano creato (`.limit(1)`), i piani passati sono persi/non recuperabili. |
+| F6 | 🟡 | ⬜ | Bottone "Applica questa settimana al Piano" in Planning | Risolve X1 senza sincronizzazione automatica silenziosa: un click copia i valori della settimana Planning corrente dentro `plan`/`athlete_plan_history`. |
+| F7 | 🟡 | ⬜ | Nuovo tab "Calendario fasi" | Tab a sé nella sidebar. Tabella settimana→fase→nota: automatica dove c'è uno storico Planning (dipende da F5), manuale nei "buchi" tra un piano e l'altro. Nota libera separata da quelle del Check-in settimanale. |
+| F8 | 🟢 | ⬜ | Aggregati mensili nel tab Calendario fasi | Peso + calorie medie + passi medi, mensilizzati (media/differenza/%). Colonna fase con sfondo colorato (come nello sheet) — nessuna banda colorata sui grafici esistenti. Dipende da F7. |
+
+Decisioni esplicite di scope (per non riproporle): niente Sonno, niente Appetito, niente ora della pesata, niente valutazione qualitativa della sessione di allenamento, niente note allenamento libere, cardio resta nel Piano (non torna nel Check-in giornaliero), dati anagrafici (nome/età/data pagamento/documenti) saltati del tutto.
+
+**Prossimo passo**: coerente con la modalità di lavoro di questa sessione, si passa a mockup su Claude Design per i pezzi con superficie visiva nuova (F2, F3, F6, F7/F8) prima di scrivere codice vero. F1 e F5 sono più "sotto il cofano" (pattern dati, query) e potrebbero non aver bisogno di mockup dedicati.
+
 ## Prossimi passi consigliati (ordine sensato)
 
 *(elenco originale del 2026-07-15, mantenuto per riferimento — vedi sotto per lo stato aggiornato al 2026-07-16)*
